@@ -153,10 +153,22 @@ def online_users():
     return jsonify(online)
 
 
+@app.route('/api/dump', methods=['GET'])
+def dump_data():
+    key = request.args.get('key', '')
+    expected = os.environ.get('ADMIN_KEY', 'changeme123')
+    if key != expected:
+        return jsonify({"error": "unauthorized"}), 401
+    with lock:
+        data = load_data()
+    return jsonify(data)
+
+
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     print("")
     print("Kunj chat server chal raha hai.")
-    print("Isi PC par kholo:  http://localhost:5000")
-    print("Doosre devices ke liye apna local IP nikaalo (ipconfig) aur us IP:5000 par kholo.")
+    print("Isi PC par kholo:  http://localhost:" + str(port))
+    print("Doosre devices ke liye apna local IP nikaalo (ipconfig) aur us IP:" + str(port) + " par kholo.")
     print("")
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=port, debug=False)
