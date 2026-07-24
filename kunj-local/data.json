@@ -2,7 +2,7 @@
   "accounts": {
     "realme c2": {
       "password": "iamrealmec2",
-      "username": "Realme C2"
+      "username": "realme c2"
     },
     "server": {
       "password": "iamserver",
@@ -42,14 +42,42 @@
         "text": "Ha bhai",
         "time": "14:14",
         "user": "Realme C2"
+      },
+      {
+        "text": "hello",
+        "time": "11:35",
+        "user": "realme c2"
+      },
+      {
+        "text": "kya kar Raha hai bhai",
+        "time": "11:35",
+        "user": "realme c2"
+      },
+      {
+        "text": "hello",
+        "time": "11:42",
+        "user": "SERVER"
+      },
+      {
+        "text": "hellogxyxy",
+        "time": "11:42",
+        "user": "realme c2"
+      }
+    ],
+    "room-msgs:testing-✨": [
+      {
+        "text": "public room is not for personal chats or any suspecious activities please respect guidlines",
+        "time": "11:39",
+        "user": "SERVER"
       }
     ]
   },
   "presence": {
-    "demo": 1784891999.1919,
-    "intro": 1784890905.38693,
-    "realme c2": 1784891269.10056,
-    "server": 1784892273.12626
+    "intro": 1784892907.965574,
+    "realme c2": 1784893422.419538,
+    "server": 1784893463.512181
   },
-  "rooms": []
+  "rooms": [
+    "testing-✨"
+  ]
 }

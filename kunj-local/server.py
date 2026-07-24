@@ -4,6 +4,12 @@ import os
 import threading
 import datetime
 
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+
+def now_ist():
+    return datetime.datetime.now(datetime.timezone.utc).astimezone(IST)
+
+
 app = Flask(__name__, static_folder='static', static_url_path='')
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 lock = threading.Lock()
@@ -101,7 +107,7 @@ def post_message(key):
     text = (body.get('text') or '').strip()
     if not user or not text:
         return jsonify({"error": "missing"}), 400
-    now = datetime.datetime.now()
+    now = now_ist()
     time_str = now.strftime('%H:%M')
     with lock:
         data = load_data()
