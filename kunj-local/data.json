@@ -1,36 +1,55 @@
 {
   "accounts": {
-    "server": {
-      "username": "SERVER",
-      "password": "iamserver"
-    },
     "realme c2": {
-      "username": "Realme C2",
-      "password": "iamrealmec2"
+      "password": "iamrealmec2",
+      "username": "Realme C2"
+    },
+    "server": {
+      "password": "iamserver",
+      "username": "SERVER"
     }
   },
-  "rooms": [],
   "messages": {
+    "dm-msgs:demo__server": [
+      {
+        "text": "hello",
+        "time": "11:12",
+        "user": "demo"
+      },
+      {
+        "text": "how are you",
+        "time": "11:15",
+        "user": "demo"
+      },
+      {
+        "text": "hello peater",
+        "time": "11:15",
+        "user": "SERVER"
+      }
+    ],
     "dm-msgs:realme c2__server": [
       {
-        "user": "SERVER",
         "text": "hallo",
-        "time": "14:09"
+        "time": "14:09",
+        "user": "SERVER"
       },
       {
-        "user": "SERVER",
         "text": "yo",
-        "time": "14:14"
+        "time": "14:14",
+        "user": "SERVER"
       },
       {
-        "user": "Realme C2",
         "text": "Ha bhai",
-        "time": "14:14"
+        "time": "14:14",
+        "user": "Realme C2"
       }
     ]
   },
   "presence": {
-    "realme c2": 1784883227.17885,
-    "server": 1784882935.848781
-  }
+    "demo": 1784891999.1919,
+    "intro": 1784890905.38693,
+    "realme c2": 1784891269.10056,
+    "server": 1784892273.12626
+  },
+  "rooms": []
 }
