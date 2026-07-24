@@ -54,6 +54,11 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Registered users ab apni profile edit kar sakte hain — photo, bio, age, gender
+  (Sidebar mein "edit profile" link, password confirm karke save hota hai)
+- USERNAME kabhi change nahi hoga, na khud, na admin panel se recommend karte
+- Guests apna gender/age sirf login karte waqt set kar sakte hain — login ke
+  baad guest profile edit nahi kar sakte (koi edit option unhe dikhega hi nahi)
 - Har user ka apna colored avatar (naam ka pehla letter, consistent color)
 - "Online now" strip sidebar mein — dekh sakta hai kaun abhi active hai
 - DM list mein green/grey dot — friend online hai ya nahi

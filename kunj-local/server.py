@@ -46,6 +46,8 @@ def signup():
     body = request.get_json(force=True)
     username = (body.get('username') or '').strip()
     password = body.get('password') or ''
+    gender = (body.get('gender') or '').strip()
+    age = body.get('age', '')
     if not username or not password:
         return jsonify({"error": "missing fields"}), 400
     key = username.lower()
@@ -53,9 +55,18 @@ def signup():
         data = load_data()
         if key in data['accounts']:
             return jsonify({"error": "taken"}), 409
-        data['accounts'][key] = {"username": username, "password": password}
+        data['accounts'][key] = {
+            "username": username,
+            "password": password,
+            "gender": gender,
+            "age": age,
+            "bio": "",
+            "avatar": ""
+        }
         save_data(data)
-    return jsonify({"ok": True, "username": username})
+    return jsonify({
+        "ok": True, "username": username, "gender": gender, "age": age, "bio": "", "avatar": ""
+    })
 
 
 @app.route('/api/login', methods=['POST'])
@@ -69,7 +80,62 @@ def login():
     acc = data['accounts'].get(key)
     if not acc or acc['password'] != password:
         return jsonify({"error": "invalid"}), 401
-    return jsonify({"ok": True, "username": acc['username']})
+    return jsonify({
+        "ok": True,
+        "username": acc['username'],
+        "gender": acc.get('gender', ''),
+        "age": acc.get('age', ''),
+        "bio": acc.get('bio', ''),
+        "avatar": acc.get('avatar', '')
+    })
+
+
+@app.route('/api/profile/<username>', methods=['GET'])
+def get_profile(username):
+    key = username.lower()
+    with lock:
+        data = load_data()
+    acc = data['accounts'].get(key)
+    if not acc:
+        return jsonify({"error": "not found"}), 404
+    return jsonify({
+        "username": acc['username'],
+        "gender": acc.get('gender', ''),
+        "age": acc.get('age', ''),
+        "bio": acc.get('bio', ''),
+        "avatar": acc.get('avatar', '')
+    })
+
+
+@app.route('/api/profile', methods=['POST'])
+def update_profile():
+    body = request.get_json(force=True)
+    username = (body.get('username') or '').strip()
+    password = body.get('password') or ''
+    key = username.lower()
+    with lock:
+        data = load_data()
+        acc = data['accounts'].get(key)
+        if not acc or acc['password'] != password:
+            return jsonify({"error": "unauthorized"}), 401
+        # username is intentionally never updated here
+        if 'gender' in body:
+            acc['gender'] = (body.get('gender') or '').strip()
+        if 'age' in body:
+            acc['age'] = body.get('age', acc.get('age', ''))
+        if 'bio' in body:
+            acc['bio'] = (body.get('bio') or '').strip()[:200]
+        if body.get('avatar'):
+            acc['avatar'] = body.get('avatar')
+        save_data(data)
+    return jsonify({
+        "ok": True,
+        "username": acc['username'],
+        "gender": acc.get('gender', ''),
+        "age": acc.get('age', ''),
+        "bio": acc.get('bio', ''),
+        "avatar": acc.get('avatar', '')
+    })
 
 
 @app.route('/api/rooms', methods=['GET'])

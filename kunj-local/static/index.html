@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ROX — chat with friends</title>
+<title>Kunj — chat with friends</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -37,19 +37,23 @@
   .mode-toggle{display:flex;background:var(--panel-2);border-radius:11px;padding:4px;margin-bottom:20px;}
   .mode-toggle button{flex:1;background:transparent;border:none;color:var(--text-dim);padding:9px 0;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;}
   .mode-toggle button.active{background:var(--pink);color:#fff;}
-  input{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:12px;}
-  input:focus{outline:none;border-color:var(--pink-dim);}
-  input::placeholder{color:var(--text-dimmer);}
+  input,select,textarea{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:14px;font-family:'Inter',sans-serif;margin-bottom:12px;}
+  select{appearance:none;-webkit-appearance:none;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pink-dim);}
+  input::placeholder,textarea::placeholder{color:var(--text-dimmer);}
+  .row-2{display:flex;gap:10px;}
+  .row-2 > *{flex:1;}
   button.primary{width:100%;background:var(--pink);border:none;color:#fff;padding:12px 0;border-radius:10px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s,transform .1s;}
   button.primary:hover{background:#e14874;}
   button.primary:active{transform:scale(0.98);}
+  button.primary:disabled{opacity:0.5;cursor:not-allowed;}
   .form-error{color:var(--pink);font-size:13px;margin:-6px 0 12px;min-height:16px;}
   .form-note{color:var(--text-dimmer);font-size:12.5px;margin-top:14px;text-align:center;line-height:1.5;}
 
   #screen-app{display:flex;height:100vh;}
   .sidebar{width:264px;min-width:264px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;}
-  
-.sidebar{
+	
+   .sidebar{
     transition: width .25s ease, min-width .25s ease;
 }
 
@@ -83,14 +87,17 @@
 .sidebar-toggle:hover{
     background:var(--panel-3);
 }
+  
 
   .sidebar-head{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
   .sidebar-head .brand{font-size:20px;gap:7px;}
   .me-row{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
-  .me-info{display:flex;flex-direction:column;min-width:0;}
+  .me-info{display:flex;flex-direction:column;min-width:0;flex:1;}
   .me-info .name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .me-info .status{font-size:11px;color:var(--green);}
-  .logout-btn{margin-left:auto;background:transparent;border:none;color:var(--text-dimmer);font-size:11.5px;cursor:pointer;text-decoration:underline;flex-shrink:0;}
+  .me-info .status{font-size:11px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .me-actions{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+  .logout-btn{background:transparent;border:none;color:var(--text-dimmer);font-size:11.5px;cursor:pointer;text-decoration:underline;}
+  .edit-profile-btn{background:transparent;border:none;color:var(--gold);font-size:11.5px;cursor:pointer;text-decoration:underline;}
 
   .online-strip{padding:12px 16px;border-bottom:1px solid var(--border);}
   .online-strip-label{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:9px;}
@@ -115,9 +122,11 @@
     width:32px;height:32px;border-radius:50%;flex-shrink:0;
     display:flex;align-items:center;justify-content:center;
     font-family:'Fraunces',serif;font-weight:600;font-size:14px;color:#fff;
+    background-size:cover;background-position:center;overflow:hidden;
   }
+  .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
   .avatar.sm{width:22px;height:22px;font-size:10px;}
-  .avatar.lg{width:38px;height:38px;font-size:16px;}
+  .avatar.lg{width:64px;height:64px;font-size:24px;}
   .avatar-dot{
     position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;
     border:2px solid var(--panel);background:var(--text-dimmer);
@@ -165,6 +174,39 @@
   .emoji-popup button{background:none;border:none;font-size:19px;cursor:pointer;padding:5px;border-radius:6px;}
   .emoji-popup button:hover{background:var(--panel-3);}
 
+  /* ---------- Profile modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal-box{
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;
+    padding:26px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto;
+  }
+  .modal-box h3{font-family:'Fraunces',serif;font-size:20px;margin:0 0 6px;}
+  .modal-sub{color:var(--text-dimmer);font-size:12.5px;margin-bottom:18px;}
+  .avatar-edit-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .avatar-edit-row label{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:8px 14px;border-radius:8px;font-size:12.5px;cursor:pointer;
+  }
+  .avatar-edit-row input[type=file]{display:none;}
+  label.field-label{display:block;font-size:11.5px;color:var(--text-dimmer);text-transform:uppercase;letter-spacing:0.05em;margin:0 0 6px;}
+  .username-locked{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-dimmer);
+    padding:11px 13px;border-radius:10px;font-size:14px;margin-bottom:12px;
+  }
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .modal-actions button.secondary{
+    flex:1;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:12px 0;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;
+  }
+  .modal-actions button.primary{flex:1;}
+  textarea{resize:vertical;min-height:60px;}
+  .close-x{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--text-dimmer);font-size:20px;cursor:pointer;}
+  .modal-box{position:relative;}
+
   @media (max-width: 700px){
     .sidebar{width:200px;min-width:200px;}
     .msg-row{max-width:85%;}
@@ -188,7 +230,7 @@
       <path d="M20 34 L20 20 Q13 12 20 5 Q27 12 20 20" fill="#EC5A82"/>
       <path d="M20 34 L20 20" stroke="#6BC48E" stroke-width="3" stroke-linecap="round"/>
     </svg>
-    ROX
+    Kunj
   </div>
   <div class="brand-tag">a quiet little garden for you and your friends to talk in</div>
 
@@ -200,20 +242,50 @@
 
     <div id="pane-guest">
       <input id="guest-name" placeholder="Pick a display name" maxlength="24">
+      <div class="row-2">
+        <select id="guest-gender">
+          <option value="">Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <input id="guest-age" type="number" min="10" max="99" placeholder="Age">
+      </div>
       <div class="form-error" id="guest-error"></div>
-      <button class="primary" onclick="joinAsGuest()">Enter ROX</button>
-      <div class="form-note">No password needed. Your name just needs to be free right now.</div>
+      <button class="primary" onclick="joinAsGuest()">Enter Kunj</button>
+      <div class="form-note">No password needed. Set gender/age now — guests can't edit profile after joining.</div>
     </div>
 
     <div id="pane-account" class="hidden">
-      <input id="acc-username" placeholder="Username" maxlength="20">
-      <input id="acc-password" type="password" placeholder="Password" maxlength="40">
-      <div class="form-error" id="acc-error"></div>
-      <div style="display:flex;gap:8px;">
-        <button class="primary" style="background:var(--panel-3);color:var(--text);" onclick="doAuth('login')">Log in</button>
-        <button class="primary" onclick="doAuth('signup')">Sign up</button>
+      <div class="mode-toggle" style="margin-bottom:14px;">
+        <button id="sub-login" class="active" onclick="switchAccountSub('login')">Log in</button>
+        <button id="sub-register" onclick="switchAccountSub('register')">Register</button>
       </div>
-      <div class="form-note">Accounts here are simple and just for friends — don't reuse a real password.</div>
+
+      <div id="sub-pane-login">
+        <input id="login-username" placeholder="Username" maxlength="20">
+        <input id="login-password" type="password" placeholder="Password" maxlength="40">
+        <div class="form-error" id="login-error"></div>
+        <button class="primary" onclick="doAuth('login')">Log in</button>
+      </div>
+
+      <div id="sub-pane-register" class="hidden">
+        <input id="reg-username" placeholder="Username" maxlength="20">
+        <input id="reg-password" type="password" placeholder="Password" maxlength="40">
+        <div class="row-2">
+          <select id="reg-gender">
+            <option value="">Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+          <input id="reg-age" type="number" min="10" max="99" placeholder="Age">
+        </div>
+        <div class="form-error" id="reg-error"></div>
+        <button class="primary" onclick="doAuth('signup')">Register</button>
+      </div>
+
+      <div class="form-note">Accounts here are simple and just for friends — don't reuse a real password. Registered users can edit their profile (photo, bio, age, gender) anytime — but never the username.</div>
     </div>
   </div>
 </div>
@@ -226,7 +298,7 @@
           <path d="M20 34 L20 20 Q13 12 20 5 Q27 12 20 20" fill="#EC5A82"/>
           <path d="M20 34 L20 20" stroke="#6BC48E" stroke-width="3" stroke-linecap="round"/>
         </svg>
-        ROX
+        Kunj
       </div>
     </div>
     <div class="me-row">
@@ -236,9 +308,12 @@
       </div>
       <div class="me-info">
         <div class="name" id="me-name"></div>
-        <div class="status">online</div>
+        <div class="status" id="me-status">online</div>
       </div>
-      <button class="logout-btn" onclick="logout()">log out</button>
+      <div class="me-actions">
+        <button class="edit-profile-btn hidden" id="edit-profile-btn" onclick="openProfileModal()">edit profile</button>
+        <button class="logout-btn" onclick="logout()">log out</button>
+      </div>
     </div>
 
     <div class="online-strip">
@@ -272,14 +347,65 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="profile-modal">
+  <div class="modal-box">
+    <button class="close-x" onclick="closeProfileModal()">&times;</button>
+    <h3>Edit profile</h3>
+    <div class="modal-sub">Username can't be changed — everything else can.</div>
+
+    <label class="field-label">Username</label>
+    <div class="username-locked" id="profile-username-display"></div>
+
+    <label class="field-label">Profile picture</label>
+    <div class="avatar-edit-row">
+      <div class="avatar lg" id="profile-avatar-preview"></div>
+      <label for="profile-pic-input">Choose photo</label>
+      <input type="file" id="profile-pic-input" accept="image/*" onchange="onPickAvatar(event)">
+    </div>
+
+    <label class="field-label">About / bio</label>
+    <textarea id="profile-bio" maxlength="200" placeholder="Say something about yourself..."></textarea>
+
+    <div class="row-2">
+      <div>
+        <label class="field-label">Gender</label>
+        <select id="profile-gender">
+          <option value="">Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Age</label>
+        <input id="profile-age" type="number" min="10" max="99" placeholder="Age">
+      </div>
+    </div>
+
+    <label class="field-label">Confirm password</label>
+    <input id="profile-password" type="password" placeholder="Your password">
+
+    <div class="form-error" id="profile-error"></div>
+
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeProfileModal()">Cancel</button>
+      <button class="primary" onclick="saveProfile()">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <script>
 let me = null;
+let myMode = null;
+let myProfile = { gender:'', age:'', bio:'', avatar:'' };
 let currentChat = null;
 let pollTimer = null;
 let onlineTimer = null;
 let heartbeatTimer = null;
 let dmContacts = [];
 let onlineUsers = [];
+let profileCache = {};
+let pendingAvatarData = '';
 
 const AVATAR_COLORS = ['#EC5A82','#E8B84B','#6BC48E','#5AA9E6','#B98AE0','#E8735A','#4FBFB0','#D6667F'];
 const EMOJIS = ['😀','😂','🥹','😍','😎','🤔','😅','🙃','😢','😡','👍','👎','🙏','👏','🎉','🔥','❤️','💚','✨','🌷','🌿','☕','🍕','🎮','⚽','📚','😴','🥳','😳','🤝'];
@@ -291,8 +417,37 @@ function colorForName(name){
 }
 
 function avatarHtml(name, size){
+  const lower = name.trim().toLowerCase();
   const initial = name.trim().charAt(0).toUpperCase() || '?';
-  return `<div class="avatar ${size||''}" style="background:${colorForName(name.toLowerCase())}">${initial}</div>`;
+  let pic = '';
+  if(me && lower === me.toLowerCase()){
+    pic = myProfile.avatar || '';
+  } else if(profileCache[lower] && profileCache[lower].avatar){
+    pic = profileCache[lower].avatar;
+  }
+  if(pic){
+    return `<div class="avatar ${size||''}"><img src="${pic}" alt=""></div>`;
+  }
+  return `<div class="avatar ${size||''}" style="background:${colorForName(lower)}">${initial}</div>`;
+}
+
+async function ensureProfileCached(nameLower){
+  if(nameLower in profileCache) return;
+  profileCache[nameLower] = {};
+  try{
+    const res = await fetch('/api/profile/' + encodeURIComponent(nameLower));
+    if(res.ok){
+      const p = await res.json();
+      profileCache[nameLower] = p;
+    }
+  }catch(e){}
+}
+
+async function cacheProfilesFor(names){
+  const missing = [...new Set(names.map(n => n.toLowerCase()))].filter(n => !(n in profileCache) && n !== (me||'').toLowerCase());
+  if(missing.length === 0) return false;
+  await Promise.all(missing.map(ensureProfileCached));
+  return true;
 }
 
 function switchTab(tab){
@@ -302,10 +457,19 @@ function switchTab(tab){
   document.getElementById('pane-account').classList.toggle('hidden', tab!=='account');
 }
 
+function switchAccountSub(sub){
+  document.getElementById('sub-login').classList.toggle('active', sub==='login');
+  document.getElementById('sub-register').classList.toggle('active', sub==='register');
+  document.getElementById('sub-pane-login').classList.toggle('hidden', sub!=='login');
+  document.getElementById('sub-pane-register').classList.toggle('hidden', sub!=='register');
+}
+
 async function joinAsGuest(){
   const nameInput = document.getElementById('guest-name');
   const err = document.getElementById('guest-error');
   const name = nameInput.value.trim();
+  const gender = document.getElementById('guest-gender').value;
+  const age = document.getElementById('guest-age').value;
   err.textContent = '';
   if(!name){ err.textContent = 'Enter a name first.'; return; }
   try{
@@ -315,41 +479,51 @@ async function joinAsGuest(){
       return;
     }
   }catch(e){}
-  enterApp(name);
+  enterApp(name, 'guest', { gender, age, bio:'', avatar:'' });
 }
 
 async function doAuth(kind){
-  const uInput = document.getElementById('acc-username');
-  const pInput = document.getElementById('acc-password');
-  const err = document.getElementById('acc-error');
+  const isLogin = kind === 'login';
+  const uInput = document.getElementById(isLogin ? 'login-username' : 'reg-username');
+  const pInput = document.getElementById(isLogin ? 'login-password' : 'reg-password');
+  const err = document.getElementById(isLogin ? 'login-error' : 'reg-error');
   const username = uInput.value.trim();
   const password = pInput.value;
   err.textContent = '';
   if(!username || !password){ err.textContent = 'Fill both fields.'; return; }
+  const payload = { username, password };
+  if(!isLogin){
+    payload.gender = document.getElementById('reg-gender').value;
+    payload.age = document.getElementById('reg-age').value;
+  }
   try{
     const res = await fetch('/api/' + kind, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username, password})
+      body: JSON.stringify(payload)
     });
     const body = await res.json();
     if(!res.ok){
       err.textContent = kind === 'signup' ? 'That username is taken.' : 'Wrong username or password.';
       return;
     }
-    enterApp(body.username);
+    enterApp(body.username, 'account', body);
   }catch(e){
     err.textContent = 'Could not reach the server. Is server.py running?';
   }
 }
 
-async function enterApp(name){
+async function enterApp(name, mode, profile){
   me = name;
-  localStorage.setItem('ROX-session', name);
+  myMode = mode;
+  myProfile = profile || { gender:'', age:'', bio:'', avatar:'' };
+  localStorage.setItem('kunj-session', JSON.stringify({ name, mode, gender: myProfile.gender, age: myProfile.age }));
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('screen-app').classList.remove('hidden');
   document.getElementById('me-name').textContent = me;
   document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
+  updateMeStatusLine();
+  document.getElementById('edit-profile-btn').classList.toggle('hidden', mode !== 'account');
   await refreshRooms();
   await refreshDmContacts();
   sendHeartbeat();
@@ -358,18 +532,105 @@ async function enterApp(name){
   onlineTimer = setInterval(refreshOnline, 4000);
 }
 
+function updateMeStatusLine(){
+  const bits = ['online'];
+  if(myProfile.gender) bits.push(myProfile.gender);
+  if(myProfile.age) bits.push(myProfile.age + 'y');
+  document.getElementById('me-status').textContent = bits.join(' · ');
+}
+
 function logout(){
-  localStorage.removeItem('ROX-session');
+  localStorage.removeItem('kunj-session');
   location.reload();
 }
 
-function tryResumeSession(){
-  const saved = localStorage.getItem('ROX-session');
-  if(saved){ enterApp(saved); }
+async function tryResumeSession(){
+  const saved = localStorage.getItem('kunj-session');
+  if(!saved) return;
+  let s;
+  try{ s = JSON.parse(saved); }catch(e){ return; }
+  if(!s || !s.name) return;
+  if(s.mode === 'account'){
+    try{
+      const p = await fetch('/api/profile/' + encodeURIComponent(s.name)).then(r => r.json());
+      await enterApp(s.name, 'account', p);
+    }catch(e){
+      await enterApp(s.name, 'account', {});
+    }
+  } else {
+    await enterApp(s.name, 'guest', { gender: s.gender||'', age: s.age||'', bio:'', avatar:'' });
+  }
 }
 
 function toggleInline(which){
   document.getElementById('inline-' + which).classList.toggle('show');
+}
+
+/* ---------- Profile modal ---------- */
+function openProfileModal(){
+  if(myMode !== 'account') return;
+  document.getElementById('profile-username-display').textContent = me;
+  document.getElementById('profile-bio').value = myProfile.bio || '';
+  document.getElementById('profile-gender').value = myProfile.gender || '';
+  document.getElementById('profile-age').value = myProfile.age || '';
+  document.getElementById('profile-password').value = '';
+  document.getElementById('profile-error').textContent = '';
+  pendingAvatarData = '';
+  document.getElementById('profile-avatar-preview').outerHTML = avatarHtml(me, 'lg').replace('class="avatar', 'id="profile-avatar-preview" class="avatar');
+  document.getElementById('profile-modal').classList.add('show');
+}
+
+function closeProfileModal(){
+  document.getElementById('profile-modal').classList.remove('show');
+}
+
+function onPickAvatar(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 350 * 1024){
+    document.getElementById('profile-error').textContent = 'Photo too big — pick something under 350KB.';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingAvatarData = reader.result;
+    document.getElementById('profile-avatar-preview').innerHTML = `<img src="${pendingAvatarData}" alt="">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveProfile(){
+  const err = document.getElementById('profile-error');
+  const password = document.getElementById('profile-password').value;
+  if(!password){ err.textContent = 'Enter your password to confirm changes.'; return; }
+  const payload = {
+    username: me,
+    password: password,
+    bio: document.getElementById('profile-bio').value,
+    gender: document.getElementById('profile-gender').value,
+    age: document.getElementById('profile-age').value
+  };
+  if(pendingAvatarData) payload.avatar = pendingAvatarData;
+  try{
+    const res = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const body = await res.json();
+    if(!res.ok){
+      err.textContent = 'Wrong password, changes not saved.';
+      return;
+    }
+    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar };
+    localStorage.setItem('kunj-session', JSON.stringify({ name: me, mode: 'account', gender: myProfile.gender, age: myProfile.age }));
+    document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
+    updateMeStatusLine();
+    closeProfileModal();
+    if(currentChat) loadMessages(false);
+  }catch(e){
+    err.textContent = 'Could not reach the server.';
+  }
 }
 
 async function sendHeartbeat(){
@@ -385,8 +646,9 @@ async function sendHeartbeat(){
 async function refreshOnline(){
   try{
     onlineUsers = await fetch('/api/online').then(r => r.json());
-    const wrap = document.getElementById('online-avatars');
     const others = onlineUsers.filter(u => u !== me.toLowerCase());
+    await cacheProfilesFor(others);
+    const wrap = document.getElementById('online-avatars');
     if(others.length === 0){
       wrap.innerHTML = '<span class="online-empty">just you, for now</span>';
     } else {
@@ -436,6 +698,7 @@ async function createOrJoinRoom(){
 async function refreshDmContacts(){
   try{
     dmContacts = await fetch('/api/dm-contacts/' + encodeURIComponent(me)).then(r => r.json());
+    await cacheProfilesFor(dmContacts);
     renderDmList();
   }catch(e){}
 }
@@ -481,13 +744,15 @@ function openRoom(name){
   startPolling();
 }
 
-function openDm(name){
+async function openDm(name){
+  await cacheProfilesFor([name]);
   currentChat = { type:'dm', id:name.toLowerCase(), storageKey: dmKey(me, name), display: name, sub: onlineUsers.includes(name.toLowerCase()) ? 'online' : 'offline' };
   refreshRooms();
   renderDmList();
   renderChatShell();
   startPolling();
 }
+
 
 let sidebarVisible = true;
 
@@ -500,6 +765,7 @@ function toggleSidebar(){
         .classList.toggle("hide", !sidebarVisible);
 
 }
+
 
 function renderChatShell(){
   const area = document.getElementById('chat-area');
@@ -557,35 +823,44 @@ function escapeHtml(str){
   return d.innerHTML;
 }
 
+function renderMessages(msgs){
+  const box = document.getElementById('chat-messages');
+  if(!box) return;
+  if(msgs.length === 0){
+    box.innerHTML = '<div class="empty-state"><span class="big-emoji">🌱</span>No messages yet. Say hi!</div>';
+    return;
+  }
+  const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+  let html = '';
+  let lastUser = null;
+  msgs.forEach(m => {
+    const mine = m.user.toLowerCase() === me.toLowerCase();
+    const grouped = lastUser === m.user.toLowerCase();
+    lastUser = m.user.toLowerCase();
+    html += `
+      <div class="msg-row ${mine?'mine':''} ${grouped?'grouped':''}">
+        <div class="avatar-slot">${grouped ? '' : avatarHtml(m.user)}</div>
+        <div class="msg-col">
+          ${grouped ? '' : `<div class="msg-meta"><span class="who">${mine?'you':escapeHtml(m.user)}</span><span>${m.time}</span></div>`}
+          <div class="bubble">${escapeHtml(m.text)}</div>
+        </div>
+      </div>
+    `;
+  });
+  box.innerHTML = html;
+  return wasAtBottom;
+}
+
 async function loadMessages(scrollToBottom){
   if(!currentChat) return;
   try{
     const msgs = await fetch('/api/messages/' + encodeURIComponent(currentChat.storageKey)).then(r => r.json());
+    const senders = msgs.map(m => m.user);
+    const fetchedNew = await cacheProfilesFor(senders);
     const box = document.getElementById('chat-messages');
     if(!box) return;
-    if(msgs.length === 0){
-      box.innerHTML = '<div class="empty-state"><span class="big-emoji">🌱</span>No messages yet. Say hi!</div>';
-      return;
-    }
-    const wasAtBottom = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
-    let html = '';
-    let lastUser = null;
-    msgs.forEach(m => {
-      const mine = m.user.toLowerCase() === me.toLowerCase();
-      const grouped = lastUser === m.user.toLowerCase();
-      lastUser = m.user.toLowerCase();
-      html += `
-        <div class="msg-row ${mine?'mine':''} ${grouped?'grouped':''}">
-          <div class="avatar-slot">${grouped ? '' : avatarHtml(m.user)}</div>
-          <div class="msg-col">
-            ${grouped ? '' : `<div class="msg-meta"><span class="who">${mine?'you':escapeHtml(m.user)}</span><span>${m.time}</span></div>`}
-            <div class="bubble">${escapeHtml(m.text)}</div>
-          </div>
-        </div>
-      `;
-    });
-    box.innerHTML = html;
-    if(scrollToBottom || wasAtBottom){
+    const wasAtBottom = renderMessages(msgs);
+    if(scrollToBottom || wasAtBottom || fetchedNew){
       box.scrollTop = box.scrollHeight;
     }
   }catch(e){}

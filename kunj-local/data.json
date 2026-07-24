@@ -25,6 +25,23 @@
         "text": "hello peater",
         "time": "11:15",
         "user": "SERVER"
+      },
+      {
+        "text": "what are you doing",
+        "time": "17:19",
+        "user": "SERVER"
+      }
+    ],
+    "dm-msgs:logic 0__server": [
+      {
+        "text": "hello server",
+        "time": "17:52",
+        "user": "Logic 0"
+      },
+      {
+        "text": "hello kid 😂",
+        "time": "17:52",
+        "user": "SERVER"
       }
     ],
     "dm-msgs:realme c2__server": [
@@ -59,25 +76,48 @@
         "user": "SERVER"
       },
       {
-        "text": "hellogxyxy",
-        "time": "11:42",
+        "text": "Bhangar",
+        "time": "17:18",
         "user": "realme c2"
-      }
-    ],
-    "room-msgs:testing-✨": [
+      },
       {
-        "text": "public room is not for personal chats or any suspecious activities please respect guidlines",
-        "time": "11:39",
+        "text": "ho",
+        "time": "17:20",
         "user": "SERVER"
+      },
+      {
+        "text": "Hello",
+        "time": "17:21",
+        "user": "Realme C2"
+      },
+      {
+        "text": "🤔",
+        "time": "17:21",
+        "user": "Realme C2"
+      },
+      {
+        "text": "Huh 🤔",
+        "time": "18:04",
+        "user": "Realme C2"
+      },
+      {
+        "text": "Nahu re",
+        "time": "18:05",
+        "user": "Realme C2"
+      },
+      {
+        "text": "Ys",
+        "time": "18:05",
+        "user": "Realme C2"
       }
     ]
   },
   "presence": {
+    "hey yo": 1784895643.384385,
     "intro": 1784892907.965574,
-    "realme c2": 1784893422.419538,
-    "server": 1784893463.512181
+    "logic 0": 1784895915.610961,
+    "realme c2": 1784896530.977474,
+    "server": 1784897957.747627
   },
-  "rooms": [
-    "testing-✨"
-  ]
+  "rooms": []
 }
