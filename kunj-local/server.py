@@ -20,9 +20,7 @@ _mongo_collection = None
 if MONGO_URI:
     from pymongo import MongoClient
     _mongo_client = MongoClient(MONGO_URI)
-    _mongo_db = _mongo_client.get_default_database()
-    if _mongo_db is None:
-        _mongo_db = _mongo_client['rox_chat']
+    _mongo_db = _mongo_client['rox_chat']
     _mongo_collection = _mongo_db['app_data']
     print("Storage: MongoDB Atlas (persistent)")
 else:
