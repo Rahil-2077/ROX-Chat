@@ -1,0 +1,36 @@
+{
+  "accounts": {
+    "server": {
+      "username": "SERVER",
+      "password": "iamserver"
+    },
+    "realme c2": {
+      "username": "Realme C2",
+      "password": "iamrealmec2"
+    }
+  },
+  "rooms": [],
+  "messages": {
+    "dm-msgs:realme c2__server": [
+      {
+        "user": "SERVER",
+        "text": "hallo",
+        "time": "14:09"
+      },
+      {
+        "user": "SERVER",
+        "text": "yo",
+        "time": "14:14"
+      },
+      {
+        "user": "Realme C2",
+        "text": "Ha bhai",
+        "time": "14:14"
+      }
+    ]
+  },
+  "presence": {
+    "realme c2": 1784883227.17885,
+    "server": 1784882935.848781
+  }
+}
