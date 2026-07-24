@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Kunj — chat with friends</title>
+<title>ROX — chat with friends</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -230,7 +230,7 @@
       <path d="M20 34 L20 20 Q13 12 20 5 Q27 12 20 20" fill="#EC5A82"/>
       <path d="M20 34 L20 20" stroke="#6BC48E" stroke-width="3" stroke-linecap="round"/>
     </svg>
-    Kunj
+    ROX
   </div>
   <div class="brand-tag">a quiet little garden for you and your friends to talk in</div>
 
@@ -252,7 +252,7 @@
         <input id="guest-age" type="number" min="10" max="99" placeholder="Age">
       </div>
       <div class="form-error" id="guest-error"></div>
-      <button class="primary" onclick="joinAsGuest()">Enter Kunj</button>
+      <button class="primary" onclick="joinAsGuest()">Enter ROX</button>
       <div class="form-note">No password needed. Set gender/age now — guests can't edit profile after joining.</div>
     </div>
 
@@ -298,7 +298,7 @@
           <path d="M20 34 L20 20 Q13 12 20 5 Q27 12 20 20" fill="#EC5A82"/>
           <path d="M20 34 L20 20" stroke="#6BC48E" stroke-width="3" stroke-linecap="round"/>
         </svg>
-        Kunj
+        ROX
       </div>
     </div>
     <div class="me-row">
@@ -517,7 +517,7 @@ async function enterApp(name, mode, profile){
   me = name;
   myMode = mode;
   myProfile = profile || { gender:'', age:'', bio:'', avatar:'' };
-  localStorage.setItem('kunj-session', JSON.stringify({ name, mode, gender: myProfile.gender, age: myProfile.age }));
+  localStorage.setItem('ROX-session', JSON.stringify({ name, mode, gender: myProfile.gender, age: myProfile.age }));
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('screen-app').classList.remove('hidden');
   document.getElementById('me-name').textContent = me;
@@ -540,12 +540,12 @@ function updateMeStatusLine(){
 }
 
 function logout(){
-  localStorage.removeItem('kunj-session');
+  localStorage.removeItem('ROX-session');
   location.reload();
 }
 
 async function tryResumeSession(){
-  const saved = localStorage.getItem('kunj-session');
+  const saved = localStorage.getItem('ROX-session');
   if(!saved) return;
   let s;
   try{ s = JSON.parse(saved); }catch(e){ return; }
@@ -623,7 +623,7 @@ async function saveProfile(){
       return;
     }
     myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar };
-    localStorage.setItem('kunj-session', JSON.stringify({ name: me, mode: 'account', gender: myProfile.gender, age: myProfile.age }));
+    localStorage.setItem('ROX-session', JSON.stringify({ name: me, mode: 'account', gender: myProfile.gender, age: myProfile.age }));
     document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
     updateMeStatusLine();
     closeProfileModal();
