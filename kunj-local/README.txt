@@ -54,6 +54,15 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- PERMANENT DATA FIX: ab agar tu Render pe MONGO_URI environment variable
+  set karta hai, to saara data (accounts, rooms, messages) ek free MongoDB
+  Atlas database mein save hota hai — Render restart/sleep hone pe bhi data
+  nahi udega. Agar MONGO_URI set nahi hai (jaise apne PC pe local chalate
+  waqt), to purane tarike se data.json file mein hi save hoga — kuch alag
+  se karna nahi padega local ke liye.
+- App ka naam ab "ROX" hai (pehle Kunj tha)
+- Sidebar ko hide/show karne ka hamburger (☰) button chat header mein — chhoti
+  screens/phone pe chat dekhna ab aasan hai
 - Registered users ab apni profile edit kar sakte hain — photo, bio, age, gender
   (Sidebar mein "edit profile" link, password confirm karke save hota hai)
 - USERNAME kabhi change nahi hoga, na khud, na admin panel se recommend karte
@@ -64,6 +73,19 @@ WHAT'S NEW
 - DM list mein green/grey dot — friend online hai ya nahi
 - Emoji picker (chat box ke bagal wala 🙂 button)
 - Polished message bubbles — consecutive messages ek sath group hote hain
+
+
+RENDER PE PERSISTENT DATA SETUP (zaroori, ek baar karna hai)
+--------------------------------------------------------------
+1. cloud.mongodb.com pe free M0 cluster banao (see chat instructions)
+2. Database user + Network Access (0.0.0.0/0) allow karo
+3. Connection string copy karo (mongodb+srv://... wala)
+4. Render dashboard -> tera service -> Environment tab
+5. Add Environment Variable: Key = MONGO_URI, Value = wahi connection string
+   (password wale <password> ko apne actual password se replace karna mat
+   bhoolna)
+6. Save karo, Render khud redeploy karega
+7. Deploy hone ke baad ab tera data restart/sleep hone pe bhi safe rahega
 
 
 NOTES

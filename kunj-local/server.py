@@ -14,8 +14,29 @@ app = Flask(__name__, static_folder='static', static_url_path='')
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 lock = threading.Lock()
 
+MONGO_URI = os.environ.get('MONGO_URI', '').strip()
+_mongo_collection = None
+
+if MONGO_URI:
+    from pymongo import MongoClient
+    _mongo_client = MongoClient(MONGO_URI)
+    _mongo_db = _mongo_client.get_default_database()
+    if _mongo_db is None:
+        _mongo_db = _mongo_client['rox_chat']
+    _mongo_collection = _mongo_db['app_data']
+    print("Storage: MongoDB Atlas (persistent)")
+else:
+    print("Storage: local data.json (WARNING: resets on Render free-tier restarts)")
+
 
 def load_data():
+    if _mongo_collection is not None:
+        doc = _mongo_collection.find_one({'_id': 'main'})
+        if not doc:
+            return {"accounts": {}, "rooms": [], "messages": {}, "presence": {}}
+        doc.pop('_id', None)
+        doc.setdefault('presence', {})
+        return doc
     if not os.path.exists(DATA_FILE):
         return {"accounts": {}, "rooms": [], "messages": {}, "presence": {}}
     with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -25,6 +46,11 @@ def load_data():
 
 
 def save_data(data):
+    if _mongo_collection is not None:
+        to_save = dict(data)
+        to_save['_id'] = 'main'
+        _mongo_collection.replace_one({'_id': 'main'}, to_save, upsert=True)
+        return
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
