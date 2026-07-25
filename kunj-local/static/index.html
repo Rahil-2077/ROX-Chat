@@ -679,7 +679,7 @@ async function sendHeartbeat(){
     await fetch('/api/heartbeat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username: me})
+      body: JSON.stringify({username: me, gender: myProfile.gender || '', age: myProfile.age || ''})
     });
   }catch(e){}
 }
@@ -841,13 +841,14 @@ async function openViewProfile(name){
       profileCache[name.toLowerCase()] = p;
       document.getElementById('vp-avatar').outerHTML = avatarHtml(name, 'lg').replace('class="avatar', 'id="vp-avatar" class="avatar');
       const bits = [];
+      if(p.guest) bits.push('Guest');
       if(p.gender) bits.push(p.gender);
       if(p.age) bits.push(p.age + ' yrs');
-      document.getElementById('vp-meta').textContent = bits.length ? bits.join(' · ') : 'No details shared';
-      document.getElementById('vp-bio').textContent = p.bio || 'No bio yet.';
+      document.getElementById('vp-meta').textContent = bits.length ? bits.join(' · ') : (p.guest ? 'Guest' : 'No details shared');
+      document.getElementById('vp-bio').textContent = p.bio || (p.guest ? "Guests don't have a bio." : 'No bio yet.');
     } else {
-      document.getElementById('vp-meta').textContent = 'Guest user';
-      document.getElementById('vp-bio').textContent = "Guests don't have a saved profile.";
+      document.getElementById('vp-meta').textContent = 'No info available';
+      document.getElementById('vp-bio').textContent = '';
     }
   }catch(e){
     document.getElementById('vp-meta').textContent = '';

@@ -126,15 +126,25 @@ def get_profile(username):
     with lock:
         data = load_data()
     acc = data['accounts'].get(key)
-    if not acc:
-        return jsonify({"error": "not found"}), 404
-    return jsonify({
-        "username": acc['username'],
-        "gender": acc.get('gender', ''),
-        "age": acc.get('age', ''),
-        "bio": acc.get('bio', ''),
-        "avatar": acc.get('avatar', '')
-    })
+    if acc:
+        return jsonify({
+            "username": acc['username'],
+            "gender": acc.get('gender', ''),
+            "age": acc.get('age', ''),
+            "bio": acc.get('bio', ''),
+            "avatar": acc.get('avatar', '')
+        })
+    presence_entry = data['presence'].get(key)
+    if isinstance(presence_entry, dict):
+        return jsonify({
+            "username": presence_entry.get('username', username),
+            "gender": presence_entry.get('gender', ''),
+            "age": presence_entry.get('age', ''),
+            "bio": "",
+            "avatar": "",
+            "guest": True
+        })
+    return jsonify({"error": "not found"}), 404
 
 
 @app.route('/api/profile', methods=['POST'])
@@ -237,9 +247,15 @@ def heartbeat():
     username = (body.get('username') or '').strip()
     if not username:
         return jsonify({"error": "missing username"}), 400
+    key = username.lower()
     with lock:
         data = load_data()
-        data['presence'][username.lower()] = datetime.datetime.now().timestamp()
+        data['presence'][key] = {
+            "ts": datetime.datetime.now().timestamp(),
+            "username": username,
+            "gender": (body.get('gender') or '').strip(),
+            "age": body.get('age', '')
+        }
         save_data(data)
     return jsonify({"ok": True})
 
@@ -249,7 +265,11 @@ def online_users():
     with lock:
         data = load_data()
     now = datetime.datetime.now().timestamp()
-    online = [u for u, ts in data['presence'].items() if now - ts < 10]
+    online = []
+    for u, entry in data['presence'].items():
+        ts = entry.get('ts') if isinstance(entry, dict) else entry
+        if ts and now - ts < 10:
+            online.append(u)
     return jsonify(online)
 
 

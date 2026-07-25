@@ -54,6 +54,9 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Guest users ka gender/age (jo unhone login pe set kiya tha) ab doosre
+  users ki profile card mein dikhta hai — pehle sirf "Guests don't have a
+  saved profile" dikhta tha
 - Room banane ka option abhi ke liye band kar diya hai — sabko sirf ek
   default room "main-room✨" milega, jo login/guest-join ke turant baad
   khud khul jaata hai
