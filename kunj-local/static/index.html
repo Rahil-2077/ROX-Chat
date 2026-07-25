@@ -1076,20 +1076,25 @@ document.addEventListener('click', (e) => {
 
 async function syncDmState(){
   try{
+    const previousContacts = [...dmContacts];
     const freshContacts = await fetch('/api/dm-contacts/' + encodeURIComponent(me)).then(r => r.json());
-    // drop unread/read-tracking state for contacts that no longer exist (e.g. guest logged out)
-    dmContacts.forEach(c => {
-      if(!freshContacts.includes(c)){
+    // merge: keep any brand-new DM (no messages sent yet) that isn't in server history yet,
+    // but drop ones that used to exist and are now gone (e.g. guest logged out)
+    const merged = [...new Set([...freshContacts, ...previousContacts.filter(c => currentChat && currentChat.type === 'dm' && currentChat.id === c)])];
+    previousContacts.forEach(c => {
+      if(!freshContacts.includes(c) && !(currentChat && currentChat.type === 'dm' && currentChat.id === c)){
         delete dmUnread[c];
         delete lastReadCounts[c];
       }
     });
-    dmContacts = freshContacts;
+    dmContacts = merged;
     await cacheProfilesFor(dmContacts);
-    if(currentChat && currentChat.type === 'dm' && !dmContacts.includes(currentChat.id)){
+    const wasKnownBefore = previousContacts.includes((currentChat||{}).id);
+    if(currentChat && currentChat.type === 'dm' && wasKnownBefore && !freshContacts.includes(currentChat.id)){
       // the person we were chatting with is gone (guest logged out) — go back to the main room
       openRoom(DEFAULT_ROOM);
     }
+    renderDmList();
   }catch(e){}
   await pollDmUnread();
 }
@@ -1200,7 +1205,11 @@ function openRoom(name){
 
 async function openDm(name){
   await cacheProfilesFor([name]);
-  currentChat = { type:'dm', id:name.toLowerCase(), storageKey: dmKey(me, name), display: name, sub: onlineUsers.includes(name.toLowerCase()) ? 'online' : 'offline' };
+  const nameLower = name.toLowerCase();
+  if(!dmContacts.includes(nameLower)){
+    dmContacts.push(nameLower);
+  }
+  currentChat = { type:'dm', id:nameLower, storageKey: dmKey(me, name), display: name, sub: onlineUsers.includes(nameLower) ? 'online' : 'offline' };
   refreshRooms();
   renderDmList();
   renderChatShell();
