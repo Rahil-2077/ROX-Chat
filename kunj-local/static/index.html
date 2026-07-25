@@ -569,7 +569,7 @@ async function enterApp(name, mode, profile){
   refreshOnline();
   onlineTimer = setInterval(refreshOnline, 4000);
   pollDmUnread();
-  dmUnreadTimer = setInterval(pollDmUnread, 4000);
+  dmUnreadTimer = setInterval(syncDmState, 4000);
   openRoom(DEFAULT_ROOM);
 }
 
@@ -784,6 +784,26 @@ document.addEventListener('click', (e) => {
     document.getElementById('dm-dropdown').classList.remove('show');
   }
 });
+
+async function syncDmState(){
+  try{
+    const freshContacts = await fetch('/api/dm-contacts/' + encodeURIComponent(me)).then(r => r.json());
+    // drop unread/read-tracking state for contacts that no longer exist (e.g. guest logged out)
+    dmContacts.forEach(c => {
+      if(!freshContacts.includes(c)){
+        delete dmUnread[c];
+        delete lastReadCounts[c];
+      }
+    });
+    dmContacts = freshContacts;
+    await cacheProfilesFor(dmContacts);
+    if(currentChat && currentChat.type === 'dm' && !dmContacts.includes(currentChat.id)){
+      // the person we were chatting with is gone (guest logged out) — go back to the main room
+      openRoom(DEFAULT_ROOM);
+    }
+  }catch(e){}
+  await pollDmUnread();
+}
 
 async function pollDmUnread(){
   if(!me || dmContacts.length === 0) return;

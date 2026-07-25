@@ -54,6 +54,11 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Guest logout hone ke kuch second baad, uska naam doosre users ki DM list
+  se bhi apne aap hat jaata hai (pehle sirf messages delete hote the, DM
+  list mein naam reh jaata tha jab tak koi refresh na kare). Agar koi is
+  waqt us guest se chat khole baitha ho, to wo automatically main-room mein
+  wapas chala jaayega.
 - Guest jab "log out" dabata hai, uske saare DM conversations turant delete
   ho jaate hain — taaki agar koi naya banda usi guest naam se aaye to use
   purane guest ke private chats na dikhein. (Registered accounts ka data
