@@ -1049,7 +1049,7 @@ function renderDmList(){
     const badge = unread > 0 ? `<span class="dm-row-badge">${unread}</span>` : '';
     return `
       <div class="dm-row" onclick="openDmFromDropdown('${escapeHtml(name)}')">
-        ${avatarHtml(name, 'sm')}
+        <span onclick="event.stopPropagation(); openViewProfile('${escapeHtml(name)}')" style="cursor:pointer;">${avatarHtml(name, 'sm')}</span>
         <span class="dm-name">${escapeHtml(name)}</span>
         ${badge}
       </div>
@@ -1210,7 +1210,9 @@ async function openDm(name){
 
 function renderChatShell(){
   const area = document.getElementById('chat-area');
-  const headerAvatar = currentChat.type === 'dm' ? avatarHtml(currentChat.display, 'sm') : '';
+  const headerAvatar = currentChat.type === 'dm'
+    ? `<span onclick="openViewProfile('${escapeHtml(currentChat.display)}')" style="cursor:pointer;">${avatarHtml(currentChat.display, 'sm')}</span>`
+    : '';
   area.innerHTML = `
     <div class="chat-head">
       <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
@@ -1282,7 +1284,7 @@ function renderMessages(msgs){
     lastUser = m.user.toLowerCase();
     html += `
       <div class="msg-row ${mine?'mine':''} ${grouped?'grouped':''}">
-        <div class="avatar-slot">${grouped ? '' : avatarHtml(m.user)}</div>
+        <div class="avatar-slot" ${grouped ? '' : `onclick="openViewProfile('${escapeHtml(m.user)}')" style="cursor:pointer;"`}>${grouped ? '' : avatarHtml(m.user)}</div>
         <div class="msg-col">
           ${grouped ? '' : `<div class="msg-meta"><span class="who">${mine?'you':escapeHtml(m.user)}</span><span>${m.time}</span></div>`}
           <div class="bubble">${escapeHtml(m.text)}</div>

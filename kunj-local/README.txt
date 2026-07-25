@@ -54,6 +54,14 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Ab kisi bhi user ke DP (avatar) pe tap karo — chahe wo message bubble ke
+  paas ho, DM dropdown list mein ho, ya kisi DM chat ke header mein — uski
+  profile turant khul jaayegi. DM dropdown mein sirf avatar tap karne se
+  profile khulta hai; baaki row tap karne se wahi DM open hota hai.
+- (Pehle se tha, dubara confirm) Guest jab logout karta hai aur usne
+  main-room mein pehle messages bheje the, to un messages ke saamne uska
+  naam ab "naam-logged out" jaisa dikhta hai — taaki agar koi naya banda
+  usi naam se aaye to purane messages usse confuse na ho.
 - OWNER MODERATION SYSTEM: agar tera account "owner" naam se hai, to kisi
   bhi user ki profile khol ke (online list ya DM se) uske upar teen action
   milte hain:

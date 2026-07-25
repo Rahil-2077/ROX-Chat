@@ -335,6 +335,13 @@ def guest_logout():
         ]
         for k in keys_to_delete:
             del data['messages'][k]
+        # tag their past room messages so a future guest with the same
+        # name isn't mistaken for them
+        for k, msgs in data['messages'].items():
+            if k.startswith('room-msgs:'):
+                for m in msgs:
+                    if m.get('user', '').lower() == key and not m['user'].endswith('-logged out'):
+                        m['user'] = m['user'] + '-logged out'
         data['presence'].pop(key, None)
         save_data(data)
     return jsonify({"ok": True, "cleared": len(keys_to_delete)})
