@@ -54,6 +54,15 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Room banane ka option abhi ke liye band kar diya hai — sabko sirf ek
+  default room "main-room✨" milega, jo login/guest-join ke turant baad
+  khud khul jaata hai
+- Online users ab ek ke niche ek (list format) dikhte hain, gender/age
+  ke saath — kisi pe click karo to uski poori profile card khulegi
+  (photo, gender, age, bio, aur seedha "Message" button DM shuru karne ke liye)
+- DM list sidebar se hatakar top-right corner mein ek mail (✉️) icon mein
+  shift kar di hai — usme unread messages ka red badge count dikhta hai,
+  dropdown khol ke conversations dekh sakte ho
 - PERMANENT DATA FIX: ab agar tu Render pe MONGO_URI environment variable
   set karta hai, to saara data (accounts, rooms, messages) ek free MongoDB
   Atlas database mein save hota hai — Render restart/sleep hone pe bhi data
@@ -69,8 +78,6 @@ WHAT'S NEW
 - Guests apna gender/age sirf login karte waqt set kar sakte hain — login ke
   baad guest profile edit nahi kar sakte (koi edit option unhe dikhega hi nahi)
 - Har user ka apna colored avatar (naam ka pehla letter, consistent color)
-- "Online now" strip sidebar mein — dekh sakta hai kaun abhi active hai
-- DM list mein green/grey dot — friend online hai ya nahi
 - Emoji picker (chat box ke bagal wala 🙂 button)
 - Polished message bubbles — consecutive messages ek sath group hote hain
 

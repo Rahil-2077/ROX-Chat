@@ -27,20 +27,26 @@ else:
     print("Storage: local data.json (WARNING: resets on Render free-tier restarts)")
 
 
+DEFAULT_ROOM = "main-room✨"
+
+
 def load_data():
     if _mongo_collection is not None:
         doc = _mongo_collection.find_one({'_id': 'main'})
         if not doc:
-            return {"accounts": {}, "rooms": [], "messages": {}, "presence": {}}
+            doc = {"accounts": {}, "rooms": [], "messages": {}, "presence": {}}
         doc.pop('_id', None)
         doc.setdefault('presence', {})
-        return doc
-    if not os.path.exists(DATA_FILE):
-        return {"accounts": {}, "rooms": [], "messages": {}, "presence": {}}
-    with open(DATA_FILE, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-        data.setdefault('presence', {})
-        return data
+    elif not os.path.exists(DATA_FILE):
+        doc = {"accounts": {}, "rooms": [], "messages": {}, "presence": {}}
+    else:
+        with open(DATA_FILE, 'r', encoding='utf-8') as f:
+            doc = json.load(f)
+            doc.setdefault('presence', {})
+    if DEFAULT_ROOM not in doc['rooms']:
+        doc['rooms'].insert(0, DEFAULT_ROOM)
+        save_data(doc)
+    return doc
 
 
 def save_data(data):
@@ -171,16 +177,14 @@ def get_rooms():
 
 @app.route('/api/rooms', methods=['POST'])
 def add_room():
-    body = request.get_json(force=True)
-    name = (body.get('name') or '').strip().lower().replace(' ', '-')
-    if not name:
-        return jsonify({"error": "missing name"}), 400
+    return jsonify({"error": "room creation is disabled right now"}), 403
+
+
+@app.route('/api/message-count/<path:key>', methods=['GET'])
+def message_count(key):
     with lock:
         data = load_data()
-        if name not in data['rooms']:
-            data['rooms'].append(name)
-            save_data(data)
-    return jsonify({"ok": True})
+    return jsonify({"count": len(data['messages'].get(key, []))})
 
 
 @app.route('/api/messages/<path:key>', methods=['GET'])
