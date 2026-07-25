@@ -214,6 +214,36 @@
   .close-x{position:absolute;top:16px;right:20px;background:none;border:none;color:var(--text-dimmer);font-size:20px;cursor:pointer;}
   .modal-box{position:relative;}
 
+  .mod-actions{display:flex;gap:8px;}
+  .mod-icon-btn{
+    flex:1;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+    padding:10px 0;border-radius:9px;cursor:pointer;font-size:18px;text-align:center;
+  }
+  .mod-icon-btn:hover{background:var(--panel-3);}
+  .mod-icon-btn.active-state{border-color:var(--pink);color:var(--pink);background:rgba(236,90,130,0.12);}
+  .mod-duration-picker{display:none;gap:6px;flex-wrap:wrap;margin-top:9px;}
+  .mod-duration-picker.show{display:flex;}
+  .mod-duration-picker button{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    padding:6px 11px;border-radius:7px;font-size:12px;cursor:pointer;
+  }
+  .mod-duration-picker button:hover{background:var(--pink);border-color:var(--pink);color:#fff;}
+  .other-accounts-label{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-dimmer);margin:14px 0 6px;}
+  .other-accounts-list{font-size:13px;color:var(--gold);line-height:1.6;}
+
+  .mod-block-screen{position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .mod-block-box{text-align:center;max-width:360px;}
+  .mod-block-icon{font-size:48px;margin-bottom:14px;}
+  .mod-block-box h2{font-family:'Fraunces',serif;margin:0 0 10px;}
+  .mod-block-box p{color:var(--text-dim);font-size:14px;line-height:1.5;}
+  .mod-timer{margin-top:18px;font-size:32px;font-weight:700;font-family:'Fraunces',serif;color:var(--pink);}
+
+  .mute-banner{
+    position:absolute;bottom:78px;left:24px;right:24px;background:var(--panel-3);
+    border:1px solid var(--pink-dim);color:var(--pink);font-size:12.5px;
+    padding:8px 12px;border-radius:9px;text-align:center;
+  }
+
   @media (max-width: 700px){
     .sidebar{width:200px;min-width:200px;}
     .msg-row{max-width:85%;}
@@ -368,9 +398,34 @@
       <label class="field-label">About</label>
       <div id="vp-bio" style="font-size:14px;color:var(--text-dim);line-height:1.5;min-height:20px;"></div>
     </div>
+
+    <div id="owner-controls" class="hidden" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+      <div id="mod-status-line" style="font-size:12.5px;color:var(--gold);margin-bottom:10px;"></div>
+      <div class="mod-actions" id="mod-actions"></div>
+      <div id="mod-duration-picker" class="mod-duration-picker"></div>
+      <div id="other-accounts-box"></div>
+    </div>
+
     <div class="modal-actions" style="margin-top:20px;">
       <button class="primary" onclick="messageFromProfile()">Message</button>
     </div>
+  </div>
+</div>
+
+<div class="mod-block-screen hidden" id="ban-screen">
+  <div class="mod-block-box">
+    <div class="mod-block-icon">🚫</div>
+    <h2>You are banned</h2>
+    <p>You are banned due to violating site rules.</p>
+  </div>
+</div>
+
+<div class="mod-block-screen hidden" id="kick-screen">
+  <div class="mod-block-box">
+    <div class="mod-block-icon">⏳</div>
+    <h2>You've been removed</h2>
+    <p>You can rejoin in:</p>
+    <div class="mod-timer" id="kick-timer">--:--</div>
   </div>
 </div>
 
@@ -438,6 +493,10 @@ let dmUnread = {};
 let lastReadCounts = {};
 let dmUnreadTimer = null;
 let viewProfileTarget = null;
+let modCheckTimer = null;
+let kickInterval = null;
+let isMuted = false;
+let ownerPasswordCache = '';
 const DEFAULT_ROOM = 'main-room✨';
 
 function toggleSidebar(){
@@ -502,6 +561,26 @@ function switchAccountSub(sub){
   document.getElementById('sub-pane-register').classList.toggle('hidden', sub!=='register');
 }
 
+function getDeviceId(){
+  let id = localStorage.getItem('ROX-device-id');
+  if(!id){
+    id = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('ROX-device-id', id);
+  }
+  return id;
+}
+const DEVICE_ID = getDeviceId();
+
+function formatRemaining(seconds){
+  seconds = Math.max(0, Math.ceil(seconds));
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if(h > 0) return `${h}h ${m}m`;
+  if(m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 async function joinAsGuest(){
   const nameInput = document.getElementById('guest-name');
   const err = document.getElementById('guest-error');
@@ -511,9 +590,20 @@ async function joinAsGuest(){
   err.textContent = '';
   if(!name){ err.textContent = 'Enter a name first.'; return; }
   try{
-    const accounts = await fetch('/api/accounts').then(r => r.json());
-    if(accounts[name.toLowerCase()]){
-      err.textContent = 'That name belongs to an account. Pick another, or log in above.';
+    const res = await fetch('/api/guest-check', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ username: name, deviceId: DEVICE_ID })
+    });
+    const body = await res.json();
+    if(!res.ok){
+      if(body.error === 'taken'){
+        err.textContent = 'That name belongs to an account. Pick another, or log in above.';
+        return;
+      }
+      if(body.error === 'ban'){ showBanScreen(); return; }
+      if(body.error === 'kick'){ showKickScreen(Math.max(0, body.until - Date.now()/1000)); return; }
+      err.textContent = 'Could not join right now.';
       return;
     }
   }catch(e){}
@@ -529,7 +619,7 @@ async function doAuth(kind){
   const password = pInput.value;
   err.textContent = '';
   if(!username || !password){ err.textContent = 'Fill both fields.'; return; }
-  const payload = { username, password };
+  const payload = { username, password, deviceId: DEVICE_ID };
   if(!isLogin){
     payload.gender = document.getElementById('reg-gender').value;
     payload.age = document.getElementById('reg-age').value;
@@ -542,6 +632,8 @@ async function doAuth(kind){
     });
     const body = await res.json();
     if(!res.ok){
+      if(body.error === 'ban'){ showBanScreen(); return; }
+      if(body.error === 'kick'){ showKickScreen(Math.max(0, body.until - Date.now()/1000)); return; }
       err.textContent = kind === 'signup' ? 'That username is taken.' : 'Wrong username or password.';
       return;
     }
@@ -570,6 +662,8 @@ async function enterApp(name, mode, profile){
   onlineTimer = setInterval(refreshOnline, 4000);
   pollDmUnread();
   dmUnreadTimer = setInterval(syncDmState, 4000);
+  checkMyModerationStatus();
+  modCheckTimer = setInterval(checkMyModerationStatus, 5000);
   openRoom(DEFAULT_ROOM);
 }
 
@@ -578,6 +672,201 @@ function updateMeStatusLine(){
   if(myProfile.gender) bits.push(myProfile.gender);
   if(myProfile.age) bits.push(myProfile.age + 'y');
   document.getElementById('me-status').textContent = bits.join(' · ');
+}
+
+function clearAllTimers(){
+  if(pollTimer) clearInterval(pollTimer);
+  if(onlineTimer) clearInterval(onlineTimer);
+  if(heartbeatTimer) clearInterval(heartbeatTimer);
+  if(dmUnreadTimer) clearInterval(dmUnreadTimer);
+  if(modCheckTimer) clearInterval(modCheckTimer);
+  if(kickInterval) clearInterval(kickInterval);
+}
+
+function showBanScreen(){
+  clearAllTimers();
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-app').classList.add('hidden');
+  document.getElementById('kick-screen').classList.add('hidden');
+  document.getElementById('ban-screen').classList.remove('hidden');
+  try{ localStorage.removeItem('ROX-session'); }catch(e){}
+}
+
+function showKickScreen(remainingSeconds){
+  clearAllTimers();
+  document.getElementById('screen-landing').classList.add('hidden');
+  document.getElementById('screen-app').classList.add('hidden');
+  document.getElementById('ban-screen').classList.add('hidden');
+  document.getElementById('kick-screen').classList.remove('hidden');
+  let remaining = Math.ceil(remainingSeconds);
+  const tick = () => {
+    if(remaining <= 0){
+      clearInterval(kickInterval);
+      document.getElementById('kick-screen').classList.add('hidden');
+      location.reload();
+      return;
+    }
+    document.getElementById('kick-timer').textContent = formatRemaining(remaining);
+    remaining--;
+  };
+  tick();
+  kickInterval = setInterval(tick, 1000);
+}
+
+async function checkMyModerationStatus(){
+  if(!me) return;
+  try{
+    const res = await fetch('/api/moderation-status/' + encodeURIComponent(me));
+    const body = await res.json();
+    if(body.status === 'ban'){
+      showBanScreen();
+    } else if(body.status === 'kick'){
+      showKickScreen(body.remaining || 0);
+    } else if(body.status === 'mute'){
+      applyMuteUI(body.remaining || 0);
+    } else {
+      clearMuteUI();
+    }
+  }catch(e){}
+}
+
+function applyMuteUI(remaining){
+  isMuted = true;
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  if(input){ input.disabled = true; input.placeholder = "You're muted"; }
+  if(sendBtn){ sendBtn.disabled = true; sendBtn.style.opacity = '0.5'; }
+  let banner = document.getElementById('mute-banner');
+  if(banner){
+    banner.textContent = `You're muted — ${formatRemaining(remaining)} left`;
+    banner.classList.remove('hidden');
+  }
+}
+
+function clearMuteUI(){
+  isMuted = false;
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  if(input){ input.disabled = false; input.placeholder = 'Type a message'; }
+  if(sendBtn){ sendBtn.disabled = false; sendBtn.style.opacity = '1'; }
+  const banner = document.getElementById('mute-banner');
+  if(banner) banner.classList.add('hidden');
+}
+
+/* ---------- Owner moderation controls ---------- */
+async function getOwnerPassword(){
+  if(ownerPasswordCache) return ownerPasswordCache;
+  const pw = prompt('Enter the owner password to confirm this action:');
+  if(pw) ownerPasswordCache = pw;
+  return pw;
+}
+
+async function renderOwnerControls(targetName){
+  const targetKey = targetName.toLowerCase();
+  if(!me || me.toLowerCase() !== 'owner' || targetKey === 'owner'){
+    document.getElementById('owner-controls').classList.add('hidden');
+    return;
+  }
+  const box = document.getElementById('owner-controls');
+  box.classList.remove('hidden');
+  document.getElementById('mod-status-line').textContent = 'Loading status...';
+  document.getElementById('mod-duration-picker').classList.remove('show');
+  document.getElementById('other-accounts-box').innerHTML = '';
+
+  let statusBody = { status: null };
+  try{
+    statusBody = await fetch('/api/moderation-status/' + encodeURIComponent(targetKey)).then(r => r.json());
+  }catch(e){}
+
+  renderModStatusLine(statusBody);
+  renderModActionButtons(targetKey, statusBody.status);
+
+  const pw = await getOwnerPassword();
+  if(pw){
+    try{
+      const res = await fetch('/api/other-accounts/' + encodeURIComponent(targetKey) + '?password=' + encodeURIComponent(pw));
+      if(res.ok){
+        renderOtherAccounts(await res.json());
+      } else if(res.status === 401){
+        ownerPasswordCache = '';
+      }
+    }catch(e){}
+  }
+}
+
+function renderModStatusLine(statusBody){
+  const el = document.getElementById('mod-status-line');
+  if(!statusBody.status){
+    el.textContent = 'No active restrictions.';
+    return;
+  }
+  if(statusBody.status === 'ban'){
+    el.textContent = '🚫 Currently BANNED (permanent, until revoked)';
+  } else {
+    const label = statusBody.status === 'mute' ? '🔇 Muted' : '👢 Kicked';
+    el.textContent = `${label} — ${formatRemaining(statusBody.remaining || 0)} remaining`;
+  }
+}
+
+function renderModActionButtons(targetKey, currentStatus){
+  const wrap = document.getElementById('mod-actions');
+  let html = '';
+  html += `<button class="mod-icon-btn ${currentStatus==='mute'?'active-state':''}" onclick="onModActionClick('mute','${targetKey}')" title="Mute">🔇</button>`;
+  html += `<button class="mod-icon-btn ${currentStatus==='kick'?'active-state':''}" onclick="onModActionClick('kick','${targetKey}')" title="Kick">👢</button>`;
+  html += `<button class="mod-icon-btn ${currentStatus==='ban'?'active-state':''}" onclick="onModActionClick('ban','${targetKey}')" title="Ban">🚫</button>`;
+  if(currentStatus){
+    html += `<button class="mod-icon-btn" onclick="onModActionClick('revoke','${targetKey}')" title="Revoke">↩️</button>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function renderOtherAccounts(others){
+  const box = document.getElementById('other-accounts-box');
+  if(!others || others.length === 0){
+    box.innerHTML = '';
+    return;
+  }
+  box.innerHTML = `
+    <div class="other-accounts-label">Other accounts (same device)</div>
+    <div class="other-accounts-list">${others.map(escapeHtml).join(', ')}</div>
+  `;
+}
+
+function onModActionClick(action, targetKey){
+  document.getElementById('mod-duration-picker').classList.remove('show');
+  if(action === 'ban' || action === 'revoke'){
+    callModerate(action, targetKey, null);
+    return;
+  }
+  showDurationPicker(action, targetKey);
+}
+
+function showDurationPicker(action, targetKey){
+  const picker = document.getElementById('mod-duration-picker');
+  const opts = [['15min','15m'],['30min','30m'],['2hr','2h'],['24hr','24h'],['1week','1w']];
+  picker.innerHTML = opts.map(([key,label]) =>
+    `<button onclick="callModerate('${action}','${targetKey}','${key}')">${label}</button>`
+  ).join('');
+  picker.classList.add('show');
+}
+
+async function callModerate(action, targetKey, duration){
+  const pw = await getOwnerPassword();
+  if(!pw) return;
+  try{
+    const res = await fetch('/api/moderate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ password: pw, target: targetKey, action, duration })
+    });
+    if(res.status === 401){
+      ownerPasswordCache = '';
+      alert('Wrong owner password.');
+      return;
+    }
+    document.getElementById('mod-duration-picker').classList.remove('show');
+    renderOwnerControls(targetKey);
+  }catch(e){}
 }
 
 async function logout(){
@@ -688,7 +977,7 @@ async function sendHeartbeat(){
     await fetch('/api/heartbeat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username: me, gender: myProfile.gender || '', age: myProfile.age || ''})
+      body: JSON.stringify({username: me, gender: myProfile.gender || '', age: myProfile.age || '', deviceId: DEVICE_ID})
     });
   }catch(e){}
 }
@@ -863,6 +1152,7 @@ async function openViewProfile(name){
   document.getElementById('vp-avatar').outerHTML = avatarHtml(name, 'lg').replace('class="avatar', 'id="vp-avatar" class="avatar');
   document.getElementById('vp-meta').textContent = 'Loading...';
   document.getElementById('vp-bio').textContent = '';
+  document.getElementById('owner-controls').classList.add('hidden');
   try{
     const res = await fetch('/api/profile/' + encodeURIComponent(name.toLowerCase()));
     if(res.ok){
@@ -882,6 +1172,7 @@ async function openViewProfile(name){
   }catch(e){
     document.getElementById('vp-meta').textContent = '';
   }
+  renderOwnerControls(name);
 }
 
 function closeViewProfile(){
@@ -931,10 +1222,11 @@ function renderChatShell(){
     </div>
     <div class="chat-messages" id="chat-messages"><div class="empty-state">Loading...</div></div>
     <div class="chat-input-row">
+      <div class="mute-banner hidden" id="mute-banner"></div>
       <button class="icon-btn" onclick="toggleEmoji()" title="Emoji">🙂</button>
       <div class="emoji-popup" id="emoji-popup"></div>
       <input id="chat-input" placeholder="Type a message" maxlength="500">
-      <button class="send-btn" onclick="sendCurrentMessage()">Send</button>
+      <button class="send-btn" id="send-btn" onclick="sendCurrentMessage()">Send</button>
     </div>
   `;
   document.getElementById('chat-input').addEventListener('keydown', e => {
@@ -942,6 +1234,7 @@ function renderChatShell(){
   });
   buildEmojiPopup();
   loadMessages(true);
+  if(isMuted) checkMyModerationStatus();
 }
 
 function buildEmojiPopup(){
@@ -1018,17 +1311,22 @@ async function loadMessages(scrollToBottom){
 
 async function sendCurrentMessage(){
   if(!currentChat) return;
+  if(isMuted) return;
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if(!text) return;
   input.value = '';
   document.getElementById('emoji-popup').classList.remove('show');
   try{
-    await fetch('/api/messages/' + encodeURIComponent(currentChat.storageKey), {
+    const res = await fetch('/api/messages/' + encodeURIComponent(currentChat.storageKey), {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({user: me, text})
     });
+    if(!res.ok){
+      checkMyModerationStatus();
+      return;
+    }
     if(currentChat.type === 'dm') refreshDmContacts();
     loadMessages(true);
   }catch(e){}

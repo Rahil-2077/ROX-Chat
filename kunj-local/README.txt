@@ -54,6 +54,44 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- OWNER MODERATION SYSTEM: agar tera account "owner" naam se hai, to kisi
+  bhi user ki profile khol ke (online list ya DM se) uske upar teen action
+  milte hain:
+    🔇 Mute  — us user ka message bhejna (room + DM dono) band ho jaata hai
+               chuni hui duration ke liye (15min/30min/2hr/24hr/1week);
+               timer khatam hote hi khud wapas khul jaata hai
+    👢 Kick  — us user ko site se turant nikaal diya jaata hai (login/guest
+               dono blocked), ek countdown timer dikhta hai use, jo khatam
+               hote hi khud wapas andar aa jaata hai
+    🚫 Ban   — permanent block, seedha ek click mein (koi duration nahi
+               poochta) — jab tak tu khud "Revoke" na daboye tab tak wapas
+               nahi aa sakta. Banned user ko "You are banned due to
+               violating site rules" screen dikhti hai.
+  Har action ke baad agar wo user currently muted/kicked/banned hai, to
+  wahi button "↩️ Revoke" mein badal jaata hai use wapas normal karne ke
+  liye. Owner apni khud ki id ko moderate nahi kar sakta.
+  Pehli baar koi action lete waqt owner password poochega (ek baar cache
+  ho jaata hai us session ke liye, baar baar nahi poochega).
+
+- MULTI-ACCOUNT DETECTION: owner jab kisi ki profile kholta hai, to niche
+  "Other accounts (same device)" section mein wo saare naam dikhte hain
+  jo usi browser/device se pehle use ho chuke hain (guest ya account,
+  koi bhi). Ye ek simple device-fingerprint (browser mein stored random
+  ID) par based hai — agar wahi banda alag browser/device use kare to
+  wahan track nahi hoga, lekin same browser mein multiple naam try karne
+  pe pakड़ा jaayega.
+
+SETTING UP THE OWNER ACCOUNT
+------------------------------
+Owner powers are tied to the exact username "owner" (case-insensitive).
+Just register/sign up normally with username "owner" and whatever
+password you like — that account automatically gets moderation powers.
+Keep that password safe since it's also used to authorize every
+mute/kick/ban action.
+
+
+WHAT'S NEW (older)
+----------
 - Guest logout hone ke kuch second baad, uska naam doosre users ki DM list
   se bhi apne aap hat jaata hai (pehle sirf messages delete hote the, DM
   list mein naam reh jaata tha jab tak koi refresh na kare). Agar koi is

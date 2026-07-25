@@ -43,6 +43,9 @@ def load_data():
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             doc = json.load(f)
             doc.setdefault('presence', {})
+    doc.setdefault('moderation', {})
+    doc.setdefault('devices', {})
+    doc.setdefault('user_devices', {})
     if DEFAULT_ROOM not in doc['rooms']:
         doc['rooms'].insert(0, DEFAULT_ROOM)
         save_data(doc)
@@ -57,6 +60,39 @@ def save_data(data):
         return
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+
+OWNER_USERNAME = "owner"
+
+DURATION_MINUTES = {"15min": 15, "30min": 30, "2hr": 120, "24hr": 1440, "1week": 10080}
+
+
+def verify_owner(data, password):
+    acc = data['accounts'].get(OWNER_USERNAME)
+    return bool(acc) and acc.get('password') == password
+
+
+def get_active_moderation(data, key, clean=True):
+    entry = data['moderation'].get(key)
+    if not entry:
+        return None
+    until = entry.get('until')
+    if until is not None and datetime.datetime.now().timestamp() > until:
+        if clean:
+            del data['moderation'][key]
+        return None
+    return entry
+
+
+def track_device(data, key, device_id, username_display):
+    if not device_id:
+        return
+    dev_list = data['user_devices'].setdefault(key, [])
+    if device_id not in dev_list:
+        dev_list.append(device_id)
+    users_list = data['devices'].setdefault(device_id, [])
+    if key not in users_list:
+        users_list.append(key)
 
 
 @app.route('/')
@@ -78,6 +114,7 @@ def signup():
     password = body.get('password') or ''
     gender = (body.get('gender') or '').strip()
     age = body.get('age', '')
+    device_id = (body.get('deviceId') or '').strip()
     if not username or not password:
         return jsonify({"error": "missing fields"}), 400
     key = username.lower()
@@ -85,6 +122,10 @@ def signup():
         data = load_data()
         if key in data['accounts']:
             return jsonify({"error": "taken"}), 409
+        mod = get_active_moderation(data, key)
+        if mod and mod['action'] in ('ban', 'kick'):
+            save_data(data)
+            return jsonify({"error": mod['action'], "until": mod.get('until')}), 403
         data['accounts'][key] = {
             "username": username,
             "password": password,
@@ -93,6 +134,7 @@ def signup():
             "bio": "",
             "avatar": ""
         }
+        track_device(data, key, device_id, username)
         save_data(data)
     return jsonify({
         "ok": True, "username": username, "gender": gender, "age": age, "bio": "", "avatar": ""
@@ -104,12 +146,21 @@ def login():
     body = request.get_json(force=True)
     username = (body.get('username') or '').strip()
     password = body.get('password') or ''
+    device_id = (body.get('deviceId') or '').strip()
     key = username.lower()
     with lock:
         data = load_data()
     acc = data['accounts'].get(key)
     if not acc or acc['password'] != password:
         return jsonify({"error": "invalid"}), 401
+    with lock:
+        data = load_data()
+        mod = get_active_moderation(data, key)
+        if mod and mod['action'] in ('ban', 'kick'):
+            save_data(data)
+            return jsonify({"error": mod['action'], "until": mod.get('until')}), 403
+        track_device(data, key, device_id, acc['username'])
+        save_data(data)
     return jsonify({
         "ok": True,
         "username": acc['username'],
@@ -178,6 +229,27 @@ def update_profile():
     })
 
 
+@app.route('/api/guest-check', methods=['POST'])
+def guest_check():
+    body = request.get_json(force=True)
+    username = (body.get('username') or '').strip()
+    device_id = (body.get('deviceId') or '').strip()
+    if not username:
+        return jsonify({"error": "missing username"}), 400
+    key = username.lower()
+    with lock:
+        data = load_data()
+        if key in data['accounts']:
+            return jsonify({"error": "taken"}), 409
+        mod = get_active_moderation(data, key)
+        if mod and mod['action'] in ('ban', 'kick'):
+            save_data(data)
+            return jsonify({"error": mod['action'], "until": mod.get('until')}), 403
+        track_device(data, key, device_id, username)
+        save_data(data)
+    return jsonify({"ok": True})
+
+
 @app.route('/api/rooms', methods=['GET'])
 def get_rooms():
     with lock:
@@ -215,6 +287,10 @@ def post_message(key):
     time_str = now.strftime('%H:%M')
     with lock:
         data = load_data()
+        mod = get_active_moderation(data, user.lower())
+        if mod:
+            save_data(data)
+            return jsonify({"error": mod['action'], "until": mod.get('until')}), 403
         msgs = data['messages'].setdefault(key, [])
         msgs.append({"user": user, "text": text, "time": time_str})
         if len(msgs) > 300:
@@ -264,10 +340,77 @@ def guest_logout():
     return jsonify({"ok": True, "cleared": len(keys_to_delete)})
 
 
+@app.route('/api/moderate', methods=['POST'])
+def moderate():
+    body = request.get_json(force=True)
+    password = body.get('password') or ''
+    target = (body.get('target') or '').strip().lower()
+    action = (body.get('action') or '').strip()
+    duration_key = body.get('duration', '')
+    if action not in ('mute', 'kick', 'ban', 'revoke'):
+        return jsonify({"error": "invalid action"}), 400
+    if not target:
+        return jsonify({"error": "missing target"}), 400
+    if target == OWNER_USERNAME:
+        return jsonify({"error": "cannot moderate owner"}), 403
+    with lock:
+        data = load_data()
+        if not verify_owner(data, password):
+            return jsonify({"error": "unauthorized"}), 401
+        if action == 'revoke':
+            data['moderation'].pop(target, None)
+            save_data(data)
+            return jsonify({"ok": True, "status": None})
+        if action == 'ban':
+            entry = {"action": "ban", "until": None}
+        else:
+            minutes = DURATION_MINUTES.get(duration_key)
+            if not minutes:
+                return jsonify({"error": "invalid duration"}), 400
+            until = datetime.datetime.now().timestamp() + minutes * 60
+            entry = {"action": action, "until": until}
+        data['moderation'][target] = entry
+        save_data(data)
+    return jsonify({"ok": True, "status": entry})
+
+
+@app.route('/api/moderation-status/<username>', methods=['GET'])
+def moderation_status(username):
+    key = username.lower()
+    with lock:
+        data = load_data()
+        mod = get_active_moderation(data, key)
+        save_data(data)
+    if not mod:
+        return jsonify({"status": None})
+    remaining = None
+    if mod.get('until') is not None:
+        remaining = max(0, mod['until'] - datetime.datetime.now().timestamp())
+    return jsonify({"status": mod['action'], "remaining": remaining})
+
+
+@app.route('/api/other-accounts/<username>', methods=['GET'])
+def other_accounts(username):
+    password = request.args.get('password', '')
+    key = username.lower()
+    with lock:
+        data = load_data()
+        if not verify_owner(data, password):
+            return jsonify({"error": "unauthorized"}), 401
+        device_ids = data['user_devices'].get(key, [])
+        others = set()
+        for dev in device_ids:
+            for u in data['devices'].get(dev, []):
+                if u != key:
+                    others.add(u)
+    return jsonify(list(others))
+
+
 @app.route('/api/heartbeat', methods=['POST'])
 def heartbeat():
     body = request.get_json(force=True)
     username = (body.get('username') or '').strip()
+    device_id = (body.get('deviceId') or '').strip()
     if not username:
         return jsonify({"error": "missing username"}), 400
     key = username.lower()
@@ -279,6 +422,7 @@ def heartbeat():
             "gender": (body.get('gender') or '').strip(),
             "age": body.get('age', '')
         }
+        track_device(data, key, device_id, username)
         save_data(data)
     return jsonify({"ok": True})
 
