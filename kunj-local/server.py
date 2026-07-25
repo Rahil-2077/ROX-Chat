@@ -241,6 +241,29 @@ def dm_contacts(username):
     return jsonify(list(contacts))
 
 
+@app.route('/api/guest-logout', methods=['POST'])
+def guest_logout():
+    body = request.get_json(force=True)
+    username = (body.get('username') or '').strip()
+    if not username:
+        return jsonify({"error": "missing username"}), 400
+    key = username.lower()
+    with lock:
+        data = load_data()
+        if key in data['accounts']:
+            # registered accounts keep their history — only guests get wiped
+            return jsonify({"ok": True, "skipped": "registered account"})
+        keys_to_delete = [
+            k for k in data['messages'].keys()
+            if k.startswith('dm-msgs:') and key in k[len('dm-msgs:'):].split('__')
+        ]
+        for k in keys_to_delete:
+            del data['messages'][k]
+        data['presence'].pop(key, None)
+        save_data(data)
+    return jsonify({"ok": True, "cleared": len(keys_to_delete)})
+
+
 @app.route('/api/heartbeat', methods=['POST'])
 def heartbeat():
     body = request.get_json(force=True)

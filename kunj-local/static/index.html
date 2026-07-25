@@ -580,7 +580,16 @@ function updateMeStatusLine(){
   document.getElementById('me-status').textContent = bits.join(' · ');
 }
 
-function logout(){
+async function logout(){
+  if(myMode === 'guest' && me){
+    try{
+      await fetch('/api/guest-logout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username: me })
+      });
+    }catch(e){}
+  }
   localStorage.removeItem('ROX-session');
   location.reload();
 }

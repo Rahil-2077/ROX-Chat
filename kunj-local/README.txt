@@ -54,6 +54,10 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Guest jab "log out" dabata hai, uske saare DM conversations turant delete
+  ho jaate hain — taaki agar koi naya banda usi guest naam se aaye to use
+  purane guest ke private chats na dikhein. (Registered accounts ka data
+  is se safe hai, unka kabhi delete nahi hota.)
 - Guest users ka gender/age (jo unhone login pe set kiya tha) ab doosre
   users ki profile card mein dikhta hai — pehle sirf "Guests don't have a
   saved profile" dikhta tha
