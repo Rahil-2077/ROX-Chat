@@ -1074,24 +1074,32 @@ document.addEventListener('click', (e) => {
   }
 });
 
+let serverConfirmedDm = new Set();
+
 async function syncDmState(){
   try{
-    const previousContacts = [...dmContacts];
     const freshContacts = await fetch('/api/dm-contacts/' + encodeURIComponent(me)).then(r => r.json());
-    // merge: keep any brand-new DM (no messages sent yet) that isn't in server history yet,
-    // but drop ones that used to exist and are now gone (e.g. guest logged out)
-    const merged = [...new Set([...freshContacts, ...previousContacts.filter(c => currentChat && currentChat.type === 'dm' && currentChat.id === c)])];
-    previousContacts.forEach(c => {
-      if(!freshContacts.includes(c) && !(currentChat && currentChat.type === 'dm' && currentChat.id === c)){
-        delete dmUnread[c];
-        delete lastReadCounts[c];
-      }
+    const freshSet = new Set(freshContacts);
+
+    // contacts the server had confirmed before (real message history existed) but
+    // are now missing — that's a genuine removal (e.g. guest logged out)
+    const goneContacts = dmContacts.filter(c => serverConfirmedDm.has(c) && !freshSet.has(c));
+    goneContacts.forEach(c => {
+      delete dmUnread[c];
+      delete lastReadCounts[c];
     });
-    dmContacts = merged;
+
+    // contacts never yet confirmed by the server (a DM just opened, no messages sent
+    // yet) should stick around locally instead of vanishing
+    const stillUnconfirmed = dmContacts.filter(c => !serverConfirmedDm.has(c) && !freshSet.has(c));
+
+    freshContacts.forEach(c => serverConfirmedDm.add(c));
+
+    dmContacts = [...new Set([...freshContacts, ...stillUnconfirmed])];
     await cacheProfilesFor(dmContacts);
-    const wasKnownBefore = previousContacts.includes((currentChat||{}).id);
-    if(currentChat && currentChat.type === 'dm' && wasKnownBefore && !freshContacts.includes(currentChat.id)){
-      // the person we were chatting with is gone (guest logged out) — go back to the main room
+
+    if(currentChat && currentChat.type === 'dm' && goneContacts.includes(currentChat.id)){
+      // the person we were chatting with is truly gone — go back to the main room
       openRoom(DEFAULT_ROOM);
     }
     renderDmList();
