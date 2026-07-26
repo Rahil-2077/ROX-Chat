@@ -54,6 +54,14 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Badge position fix: online list mein badge ab naam ke sabse right
+  corner mein dikhta hai (pehle left mein tha). Room messages mein bhi
+  ab sender ke naam ke left side badge dikhta hai.
+- Owner ke moderation actions (mute/kick/ban/revoke) ab bina kisi password
+  popup ke direct chalte hain. Jab owner login karta hai, uska password
+  ek baar chup-chaap yaad rakh liya jaata hai (sirf usi browser mein) —
+  uske baad koi bhi action lene pe kabhi prompt nahi aayega. Logout karne
+  pe ye yaad rakha hua password apne aap clear ho jaata hai.
 - ROLE BADGES: har user ke naam ke saath ab ek badge dikhta hai —
   Owner (special gif), registered Member (png), Guest (png). Badge
   online list mein naam ke sabse left mein dikhta hai, aur profile

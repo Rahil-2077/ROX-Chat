@@ -75,7 +75,7 @@
   .online-row{display:flex;align-items:center;gap:9px;padding:7px 6px;border-radius:9px;cursor:pointer;}
   .online-row:hover{background:var(--panel-2);}
   .online-row .avatar-wrap{position:relative;flex-shrink:0;}
-  .online-row .o-info{min-width:0;}
+  .online-row .o-info{min-width:0;flex:1;}
   .online-row .o-name{font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .online-row .o-meta{font-size:11px;color:var(--text-dimmer);}
   .online-empty{font-size:12px;color:var(--text-dimmer);}
@@ -669,6 +669,10 @@ async function doAuth(kind){
       err.textContent = kind === 'signup' ? 'That username is taken.' : 'Wrong username or password.';
       return;
     }
+    if(username.toLowerCase() === 'owner'){
+      ownerPasswordCache = password;
+      try{ localStorage.setItem('ROX-owner-pw', password); }catch(e){}
+    }
     enterApp(body.username, 'account', body);
   }catch(e){
     err.textContent = 'Could not reach the server. Is server.py running?';
@@ -789,9 +793,11 @@ function clearMuteUI(){
 /* ---------- Owner moderation controls ---------- */
 async function getOwnerPassword(){
   if(ownerPasswordCache) return ownerPasswordCache;
-  const pw = prompt('Enter the owner password to confirm this action:');
-  if(pw) ownerPasswordCache = pw;
-  return pw;
+  try{
+    const saved = localStorage.getItem('ROX-owner-pw');
+    if(saved){ ownerPasswordCache = saved; return saved; }
+  }catch(e){}
+  return '';
 }
 
 async function renderOwnerControls(targetName){
@@ -911,6 +917,10 @@ async function logout(){
         body: JSON.stringify({ username: me })
       });
     }catch(e){}
+  }
+  if(me && me.toLowerCase() === 'owner'){
+    ownerPasswordCache = '';
+    try{ localStorage.removeItem('ROX-owner-pw'); }catch(e){}
   }
   localStorage.removeItem('ROX-session');
   location.reload();
@@ -1033,7 +1043,6 @@ async function refreshOnline(){
         const displayName = p.username || u;
         return `
           <div class="online-row" onclick="openViewProfile('${escapeHtml(displayName)}')">
-            ${badgeHtml(displayName, 'sm')}
             <div class="avatar-wrap" style="position:relative;">
               ${avatarHtml(u, 'sm')}
               <div class="avatar-dot online" style="width:7px;height:7px;"></div>
@@ -1042,6 +1051,7 @@ async function refreshOnline(){
               <div class="o-name">${escapeHtml(displayName)}</div>
               <div class="o-meta">${escapeHtml(meta)}</div>
             </div>
+            <span style="margin-left:auto;flex-shrink:0;">${badgeHtml(displayName, 'sm')}</span>
           </div>
         `;
       }).join('');
@@ -1340,7 +1350,7 @@ function renderMessages(msgs){
       <div class="msg-row ${mine?'mine':''} ${grouped?'grouped':''}">
         <div class="avatar-slot" ${grouped ? '' : `onclick="openViewProfile('${escapeHtml(m.user)}')" style="cursor:pointer;"`}>${grouped ? '' : avatarHtml(m.user)}</div>
         <div class="msg-col">
-          ${grouped ? '' : `<div class="msg-meta"><span class="who">${mine?'you':escapeHtml(m.user)}</span><span>${m.time}</span></div>`}
+          ${grouped ? '' : `<div class="msg-meta">${badgeHtml(m.user, 'sm')}<span class="who">${mine?'you':escapeHtml(m.user)}</span><span>${m.time}</span></div>`}
           <div class="bubble">${escapeHtml(m.text)}</div>
         </div>
       </div>
