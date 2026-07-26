@@ -140,6 +140,10 @@
   }
   .avatar-dot.online{background:var(--green);}
 
+  .role-badge{width:18px;height:18px;flex-shrink:0;object-fit:contain;border-radius:4px;}
+  .role-badge.sm{width:14px;height:14px;}
+  .role-badge.lg{width:26px;height:26px;}
+
   .chat-area{flex:1;display:flex;flex-direction:column;min-width:0;}
   .chat-head{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;}
   .chat-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin:0;}
@@ -339,6 +343,7 @@
       </div>
     </div>
     <div class="me-row">
+      <span id="me-badge"></span>
       <div class="avatar-wrap" style="position:relative;">
         <div class="avatar" id="me-avatar"></div>
         <div class="avatar-dot online"></div>
@@ -391,6 +396,7 @@
     <button class="close-x" onclick="closeViewProfile()">&times;</button>
     <div style="text-align:center;">
       <div class="avatar lg" id="vp-avatar" style="margin:0 auto 12px;"></div>
+      <div id="vp-badge" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;font-size:12px;color:var(--text-dimmer);"></div>
       <h3 id="vp-name" style="margin-bottom:2px;"></h3>
       <div class="modal-sub" id="vp-meta">Loading...</div>
     </div>
@@ -528,6 +534,32 @@ function avatarHtml(name, size){
   return `<div class="avatar ${size||''}" style="background:${colorForName(lower)}">${initial}</div>`;
 }
 
+const ROLE_BADGE_SRC = {
+  owner: '/badges/ownerbadge.gif',
+  user: '/badges/userbadge.png',
+  guest: '/badges/guestbadge.png'
+};
+const ROLE_LABEL = { owner: 'Owner', user: 'Member', guest: 'Guest' };
+
+function getRoleFor(name){
+  const lower = name.trim().toLowerCase();
+  if(lower === 'owner') return 'owner';
+  if(me && lower === me.toLowerCase()){
+    return myMode === 'account' ? 'user' : 'guest';
+  }
+  const p = profileCache[lower];
+  if(p && p.guest) return 'guest';
+  if(p && p.username) return 'user';
+  return 'guest';
+}
+
+function badgeHtml(name, size){
+  const role = getRoleFor(name);
+  const src = ROLE_BADGE_SRC[role];
+  const label = ROLE_LABEL[role];
+  return `<img class="role-badge ${size||''}" src="${src}" alt="${label}" title="${label}" onerror="this.style.display='none'">`;
+}
+
 async function ensureProfileCached(nameLower){
   if(nameLower in profileCache) return;
   profileCache[nameLower] = {};
@@ -652,6 +684,7 @@ async function enterApp(name, mode, profile){
   document.getElementById('screen-app').classList.remove('hidden');
   document.getElementById('me-name').textContent = me;
   document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
+  document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');
   updateMeStatusLine();
   document.getElementById('edit-profile-btn').classList.toggle('hidden', mode !== 'account');
   await refreshRooms();
@@ -1000,6 +1033,7 @@ async function refreshOnline(){
         const displayName = p.username || u;
         return `
           <div class="online-row" onclick="openViewProfile('${escapeHtml(displayName)}')">
+            ${badgeHtml(displayName, 'sm')}
             <div class="avatar-wrap" style="position:relative;">
               ${avatarHtml(u, 'sm')}
               <div class="avatar-dot online" style="width:7px;height:7px;"></div>
@@ -1165,6 +1199,7 @@ async function openViewProfile(name){
   document.getElementById('vp-avatar').outerHTML = avatarHtml(name, 'lg').replace('class="avatar', 'id="vp-avatar" class="avatar');
   document.getElementById('vp-meta').textContent = 'Loading...';
   document.getElementById('vp-bio').textContent = '';
+  document.getElementById('vp-badge').innerHTML = '';
   document.getElementById('owner-controls').classList.add('hidden');
   try{
     const res = await fetch('/api/profile/' + encodeURIComponent(name.toLowerCase()));
@@ -1185,6 +1220,8 @@ async function openViewProfile(name){
   }catch(e){
     document.getElementById('vp-meta').textContent = '';
   }
+  const role = getRoleFor(name);
+  document.getElementById('vp-badge').innerHTML = `${badgeHtml(name)}<span>${ROLE_LABEL[role]}</span>`;
   renderOwnerControls(name);
 }
 

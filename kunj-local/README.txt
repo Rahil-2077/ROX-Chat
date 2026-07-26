@@ -54,6 +54,18 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- ROLE BADGES: har user ke naam ke saath ab ek badge dikhta hai —
+  Owner (special gif), registered Member (png), Guest (png). Badge
+  online list mein naam ke sabse left mein dikhta hai, aur profile
+  card khol ke dekho to naam ke upar badge + uska naam (Owner/Member/
+  Guest) bhi dikhta hai.
+  Isko kaam karne ke liye tujhe apni image files daalni hongi:
+  static/badges/ folder ke andar, exact yehi naam se:
+    ownerbadge.gif
+    userbadge.png
+    guestbadge.png
+  Files na hone par bas badge chhota sa blank jagah rahega, kuch tootega
+  nahi.
 - Ab kisi bhi user ke DP (avatar) pe tap karo — chahe wo message bubble ke
   paas ho, DM dropdown list mein ho, ya kisi DM chat ke header mein — uski
   profile turant khul jaayegi. DM dropdown mein sirf avatar tap karne se
