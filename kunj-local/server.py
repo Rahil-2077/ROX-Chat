@@ -3,6 +3,7 @@ import json
 import os
 import threading
 import datetime
+import random
 
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
@@ -28,6 +29,25 @@ else:
 
 
 DEFAULT_ROOM = "main-room✨"
+DEVICE_RETENTION_SECONDS = 24 * 60 * 60
+
+
+def prune_old_devices(data):
+    last_seen = data.get('device_last_seen', {})
+    now = datetime.datetime.now().timestamp()
+    expired = [d for d, ts in last_seen.items() if now - ts > DEVICE_RETENTION_SECONDS]
+    if not expired:
+        return False
+    for d in expired:
+        last_seen.pop(d, None)
+        users = data['devices'].pop(d, [])
+        for u in users:
+            devs = data['user_devices'].get(u)
+            if devs and d in devs:
+                devs.remove(d)
+                if not devs:
+                    data['user_devices'].pop(u, None)
+    return True
 
 
 def load_data():
@@ -46,8 +66,14 @@ def load_data():
     doc.setdefault('moderation', {})
     doc.setdefault('devices', {})
     doc.setdefault('user_devices', {})
+    doc.setdefault('device_last_seen', {})
+    needs_save = False
     if DEFAULT_ROOM not in doc['rooms']:
         doc['rooms'].insert(0, DEFAULT_ROOM)
+        needs_save = True
+    if prune_old_devices(doc):
+        needs_save = True
+    if needs_save:
         save_data(doc)
     return doc
 
@@ -67,9 +93,25 @@ OWNER_USERNAME = "owner"
 DURATION_MINUTES = {"15min": 15, "30min": 30, "2hr": 120, "24hr": 1440, "1week": 10080}
 
 
+def get_owner_key(data):
+    for k, acc in data['accounts'].items():
+        if acc.get('is_owner'):
+            return k
+    if OWNER_USERNAME in data['accounts']:
+        return OWNER_USERNAME
+    return None
+
+
 def verify_owner(data, password):
-    acc = data['accounts'].get(OWNER_USERNAME)
-    return bool(acc) and acc.get('password') == password
+    key = get_owner_key(data)
+    if not key:
+        return False
+    return data['accounts'][key].get('password') == password
+
+
+def verify_requester_is_owner(data, requester):
+    key = get_owner_key(data)
+    return bool(key) and (requester or '').strip().lower() == key
 
 
 def get_active_moderation(data, key, clean=True):
@@ -87,6 +129,7 @@ def get_active_moderation(data, key, clean=True):
 def track_device(data, key, device_id, username_display):
     if not device_id:
         return
+    data.setdefault('device_last_seen', {})[device_id] = datetime.datetime.now().timestamp()
     dev_list = data['user_devices'].setdefault(key, [])
     if device_id not in dev_list:
         dev_list.append(device_id)
@@ -132,12 +175,14 @@ def signup():
             "gender": gender,
             "age": age,
             "bio": "",
-            "avatar": ""
+            "avatar": "",
+            "is_owner": key == OWNER_USERNAME
         }
         track_device(data, key, device_id, username)
         save_data(data)
     return jsonify({
-        "ok": True, "username": username, "gender": gender, "age": age, "bio": "", "avatar": ""
+        "ok": True, "username": username, "gender": gender, "age": age, "bio": "", "avatar": "",
+        "is_owner": key == OWNER_USERNAME
     })
 
 
@@ -167,7 +212,8 @@ def login():
         "gender": acc.get('gender', ''),
         "age": acc.get('age', ''),
         "bio": acc.get('bio', ''),
-        "avatar": acc.get('avatar', '')
+        "avatar": acc.get('avatar', ''),
+        "is_owner": bool(acc.get('is_owner'))
     })
 
 
@@ -183,7 +229,8 @@ def get_profile(username):
             "gender": acc.get('gender', ''),
             "age": acc.get('age', ''),
             "bio": acc.get('bio', ''),
-            "avatar": acc.get('avatar', '')
+            "avatar": acc.get('avatar', ''),
+            "is_owner": bool(acc.get('is_owner'))
         })
     presence_entry = data['presence'].get(key)
     if isinstance(presence_entry, dict):
@@ -225,7 +272,8 @@ def update_profile():
         "gender": acc.get('gender', ''),
         "age": acc.get('age', ''),
         "bio": acc.get('bio', ''),
-        "avatar": acc.get('avatar', '')
+        "avatar": acc.get('avatar', ''),
+        "is_owner": bool(acc.get('is_owner'))
     })
 
 
@@ -340,17 +388,71 @@ def guest_logout():
         for k, msgs in data['messages'].items():
             if k.startswith('room-msgs:'):
                 for m in msgs:
-                    if m.get('user', '').lower() == key and not m['user'].endswith('-logged out'):
-                        m['user'] = m['user'] + '-logged out'
+                    if m.get('user', '').lower() == key and not m['user'].startswith('#'):
+                        suffix = str(random.randint(10000000, 99999999))
+                        m['user'] = '#' + m['user'] + '-' + suffix
         data['presence'].pop(key, None)
         save_data(data)
     return jsonify({"ok": True, "cleared": len(keys_to_delete)})
 
 
+@app.route('/api/owner-self-update', methods=['POST'])
+def owner_self_update():
+    body = request.get_json(force=True)
+    current_username = (body.get('currentUsername') or '').strip()
+    current_password = body.get('currentPassword') or ''
+    new_username = (body.get('newUsername') or '').strip()
+    new_password = body.get('newPassword') or ''
+    current_key = current_username.lower()
+    with lock:
+        data = load_data()
+        acc = data['accounts'].get(current_key)
+        if not acc or acc.get('password') != current_password or not acc.get('is_owner'):
+            return jsonify({"error": "unauthorized"}), 401
+        if new_username and new_username.lower() != current_key:
+            new_key = new_username.lower()
+            if new_key in data['accounts']:
+                return jsonify({"error": "taken"}), 409
+            del data['accounts'][current_key]
+            acc['username'] = new_username
+            acc['is_owner'] = True
+            data['accounts'][new_key] = acc
+        if new_password:
+            acc['password'] = new_password
+        save_data(data)
+    return jsonify({"ok": True, "username": acc['username']})
+
+
+@app.route('/api/owner-rename-user', methods=['POST'])
+def owner_rename_user():
+    body = request.get_json(force=True)
+    requester = body.get('requester') or ''
+    target = (body.get('target') or '').strip().lower()
+    new_username = (body.get('newUsername') or '').strip()
+    if not target or not new_username:
+        return jsonify({"error": "missing fields"}), 400
+    with lock:
+        data = load_data()
+        if not verify_requester_is_owner(data, requester):
+            return jsonify({"error": "unauthorized"}), 401
+        if target not in data['accounts']:
+            return jsonify({"error": "target not found (guests can't be renamed)"}), 404
+        new_key = new_username.lower()
+        acc = data['accounts'][target]
+        if new_key != target:
+            if new_key in data['accounts']:
+                return jsonify({"error": "taken"}), 409
+            del data['accounts'][target]
+            acc['username'] = new_username
+            data['accounts'][new_key] = acc
+        save_data(data)
+    return jsonify({"ok": True, "username": acc['username']})
+
+
 @app.route('/api/moderate', methods=['POST'])
 def moderate():
     body = request.get_json(force=True)
-    password = body.get('password') or ''
+    requester = body.get('requester') or ''
     target = (body.get('target') or '').strip().lower()
     action = (body.get('action') or '').strip()
     duration_key = body.get('duration', '')
@@ -358,12 +460,12 @@ def moderate():
         return jsonify({"error": "invalid action"}), 400
     if not target:
         return jsonify({"error": "missing target"}), 400
-    if target == OWNER_USERNAME:
-        return jsonify({"error": "cannot moderate owner"}), 403
     with lock:
         data = load_data()
-        if not verify_owner(data, password):
+        if not verify_requester_is_owner(data, requester):
             return jsonify({"error": "unauthorized"}), 401
+        if target == get_owner_key(data):
+            return jsonify({"error": "cannot moderate owner"}), 403
         if action == 'revoke':
             data['moderation'].pop(target, None)
             save_data(data)
@@ -398,11 +500,11 @@ def moderation_status(username):
 
 @app.route('/api/other-accounts/<username>', methods=['GET'])
 def other_accounts(username):
-    password = request.args.get('password', '')
+    requester = request.args.get('requester', '')
     key = username.lower()
     with lock:
         data = load_data()
-        if not verify_owner(data, password):
+        if not verify_requester_is_owner(data, requester):
             return jsonify({"error": "unauthorized"}), 401
         device_ids = data['user_devices'].get(key, [])
         others = set()

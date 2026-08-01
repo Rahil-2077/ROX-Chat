@@ -54,6 +54,26 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Owner ab apna khud ka username aur password change kar sakta hai (Edit
+  Profile modal mein — owner ke liye username field ab editable hai, aur
+  ek "new password" field bhi dikhta hai). Owner rename hone ke baad bhi
+  uski moderation powers wahi rehti hain (username pe nahi, ek internal
+  "is_owner" flag pe based hai ab).
+- Owner doosre REGISTERED users ka username bhi change kar sakta hai
+  (unki profile khol ke "Rename this user" box se) — lekin unka password
+  kabhi nahi dekh/change kar sakta. Guests rename nahi ho sakte (unka
+  koi permanent account hi nahi hota).
+- "Other accounts (same device)" wala multi-account detection ab fix ho
+  gaya — pehle ye kabhi kabhi khaali dikhta tha kyunki wo ek cached
+  password pe depend karta tha jo purani sessions mein missing ho sakta
+  tha. Ab isko sirf "owner hi hai" check chahiye (password ki zaroorat
+  hi nahi), isliye hamesha sahi se dikhega.
+- Device-tracking data (kaun kitne account use kar raha hai, iske liye)
+  ab sirf 24 GHANTE tak store hota hai — uske baad khud-ba-khud delete ho
+  jaata hai, taaki database/storage bhar na jaaye lambe time mein.
+- Guest logout tag format change: pehle "naam-logged out" dikhta tha,
+  ab format hai "#naam-8digitrandomnumber" (jaise "#sumit-79845415") —
+  naam ke aage # bhi lagta hai ab.
 - Badge position fix: online list mein badge ab naam ke sabse right
   corner mein dikhta hai (pehle left mein tha). Room messages mein bhi
   ab sender ke naam ke left side badge dikhta hai.
