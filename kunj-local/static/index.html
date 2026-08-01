@@ -409,7 +409,6 @@
       <div id="mod-status-line" style="font-size:12.5px;color:var(--gold);margin-bottom:10px;"></div>
       <div class="mod-actions" id="mod-actions"></div>
       <div id="mod-duration-picker" class="mod-duration-picker"></div>
-      <div id="rename-control" style="margin-top:14px;"></div>
       <div id="other-accounts-box"></div>
     </div>
 
@@ -444,12 +443,6 @@
 
     <label class="field-label">Username</label>
     <div class="username-locked" id="profile-username-display"></div>
-    <input id="profile-username-edit" class="hidden" maxlength="20" placeholder="Username">
-
-    <div id="owner-password-row" class="hidden">
-      <label class="field-label">New password (leave blank to keep current)</label>
-      <input id="profile-new-password" type="password" placeholder="New password">
-    </div>
 
     <label class="field-label">Profile picture</label>
     <div class="avatar-edit-row">
@@ -492,7 +485,7 @@
 <script>
 let me = null;
 let myMode = null;
-let myProfile = { gender:'', age:'', bio:'', avatar:'', is_owner:false };
+let myProfile = { gender:'', age:'', bio:'', avatar:'' };
 let currentChat = null;
 let pollTimer = null;
 let onlineTimer = null;
@@ -550,12 +543,11 @@ const ROLE_LABEL = { owner: 'Owner', user: 'Member', guest: 'Guest' };
 
 function getRoleFor(name){
   const lower = name.trim().toLowerCase();
+  if(lower === 'owner') return 'owner';
   if(me && lower === me.toLowerCase()){
-    if(myProfile.is_owner) return 'owner';
     return myMode === 'account' ? 'user' : 'guest';
   }
   const p = profileCache[lower];
-  if(p && p.is_owner) return 'owner';
   if(p && p.guest) return 'guest';
   if(p && p.username) return 'user';
   return 'guest';
@@ -677,7 +669,7 @@ async function doAuth(kind){
       err.textContent = kind === 'signup' ? 'That username is taken.' : 'Wrong username or password.';
       return;
     }
-    if(body.is_owner){
+    if(username.toLowerCase() === 'owner'){
       ownerPasswordCache = password;
       try{ localStorage.setItem('ROX-owner-pw', password); }catch(e){}
     }
@@ -690,8 +682,7 @@ async function doAuth(kind){
 async function enterApp(name, mode, profile){
   me = name;
   myMode = mode;
-  myProfile = profile || { gender:'', age:'', bio:'', avatar:'', is_owner:false };
-  myProfile.is_owner = !!myProfile.is_owner;
+  myProfile = profile || { gender:'', age:'', bio:'', avatar:'' };
   localStorage.setItem('ROX-session', JSON.stringify({ name, mode, gender: myProfile.gender, age: myProfile.age }));
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('screen-app').classList.remove('hidden');
@@ -811,7 +802,7 @@ async function getOwnerPassword(){
 
 async function renderOwnerControls(targetName){
   const targetKey = targetName.toLowerCase();
-  if(!me || !myProfile.is_owner || targetKey === me.toLowerCase()){
+  if(!me || me.toLowerCase() !== 'owner' || targetKey === 'owner'){
     document.getElementById('owner-controls').classList.add('hidden');
     return;
   }
@@ -828,50 +819,18 @@ async function renderOwnerControls(targetName){
 
   renderModStatusLine(statusBody);
   renderModActionButtons(targetKey, statusBody.status);
-  renderRenameControl(targetKey, targetName);
 
-  try{
-    const res = await fetch('/api/other-accounts/' + encodeURIComponent(targetKey) + '?requester=' + encodeURIComponent(me));
-    if(res.ok){
-      renderOtherAccounts(await res.json());
-    }
-  }catch(e){}
-}
-
-function renderRenameControl(targetKey, currentDisplayName){
-  const isGuest = profileCache[targetKey] && profileCache[targetKey].guest;
-  const el = document.getElementById('rename-control');
-  if(isGuest){
-    el.innerHTML = '';
-    return;
+  const pw = await getOwnerPassword();
+  if(pw){
+    try{
+      const res = await fetch('/api/other-accounts/' + encodeURIComponent(targetKey) + '?password=' + encodeURIComponent(pw));
+      if(res.ok){
+        renderOtherAccounts(await res.json());
+      } else if(res.status === 401){
+        ownerPasswordCache = '';
+      }
+    }catch(e){}
   }
-  el.innerHTML = `
-    <div class="other-accounts-label">Rename this user</div>
-    <div style="display:flex;gap:6px;">
-      <input id="rename-input" placeholder="new username" value="${escapeHtml(currentDisplayName)}" maxlength="20" style="margin-bottom:0;">
-      <button class="mod-icon-btn" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="submitRename('${targetKey}')">Rename</button>
-    </div>
-  `;
-}
-
-async function submitRename(targetKey){
-  const input = document.getElementById('rename-input');
-  const newUsername = input.value.trim();
-  if(!newUsername) return;
-  try{
-    const res = await fetch('/api/owner-rename-user', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ requester: me, target: targetKey, newUsername })
-    });
-    const body = await res.json();
-    if(!res.ok){
-      alert(body.error === 'taken' ? 'That username is already taken.' : 'Could not rename.');
-      return;
-    }
-    delete profileCache[targetKey];
-    openViewProfile(body.username);
-  }catch(e){}
 }
 
 function renderModStatusLine(statusBody){
@@ -931,14 +890,17 @@ function showDurationPicker(action, targetKey){
 }
 
 async function callModerate(action, targetKey, duration){
+  const pw = await getOwnerPassword();
+  if(!pw) return;
   try{
     const res = await fetch('/api/moderate', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ requester: me, target: targetKey, action, duration })
+      body: JSON.stringify({ password: pw, target: targetKey, action, duration })
     });
     if(res.status === 401){
-      alert('Only the owner account can do this.');
+      ownerPasswordCache = '';
+      alert('Wrong owner password.');
       return;
     }
     document.getElementById('mod-duration-picker').classList.remove('show');
@@ -956,7 +918,7 @@ async function logout(){
       });
     }catch(e){}
   }
-  if(myProfile.is_owner){
+  if(me && me.toLowerCase() === 'owner'){
     ownerPasswordCache = '';
     try{ localStorage.removeItem('ROX-owner-pw'); }catch(e){}
   }
@@ -997,15 +959,6 @@ function openProfileModal(){
   document.getElementById('profile-error').textContent = '';
   pendingAvatarData = '';
   document.getElementById('profile-avatar-preview').outerHTML = avatarHtml(me, 'lg').replace('class="avatar', 'id="profile-avatar-preview" class="avatar');
-
-  const isOwner = myProfile.is_owner;
-  document.getElementById('profile-username-display').classList.toggle('hidden', isOwner);
-  const usernameEdit = document.getElementById('profile-username-edit');
-  usernameEdit.classList.toggle('hidden', !isOwner);
-  usernameEdit.value = me;
-  document.getElementById('owner-password-row').classList.toggle('hidden', !isOwner);
-  document.getElementById('profile-new-password').value = '';
-
   document.getElementById('profile-modal').classList.add('show');
 }
 
@@ -1051,41 +1004,9 @@ async function saveProfile(){
       err.textContent = 'Wrong password, changes not saved.';
       return;
     }
-
-    if(myProfile.is_owner){
-      const newUsername = document.getElementById('profile-username-edit').value.trim();
-      const newPassword = document.getElementById('profile-new-password').value;
-      const usernameChanged = newUsername && newUsername.toLowerCase() !== me.toLowerCase();
-      if(usernameChanged || newPassword){
-        const res2 = await fetch('/api/owner-self-update', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            currentUsername: me,
-            currentPassword: password,
-            newUsername: usernameChanged ? newUsername : '',
-            newPassword: newPassword
-          })
-        });
-        const body2 = await res2.json();
-        if(!res2.ok){
-          err.textContent = body2.error === 'taken' ? 'That username is taken.' : 'Could not update account.';
-          return;
-        }
-        if(usernameChanged){
-          me = body2.username;
-          document.getElementById('me-name').textContent = me;
-        }
-        const effectivePassword = newPassword || password;
-        ownerPasswordCache = effectivePassword;
-        try{ localStorage.setItem('ROX-owner-pw', effectivePassword); }catch(e){}
-      }
-    }
-
-    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar, is_owner: !!body.is_owner };
+    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar };
     localStorage.setItem('ROX-session', JSON.stringify({ name: me, mode: 'account', gender: myProfile.gender, age: myProfile.age }));
     document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
-    document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');
     updateMeStatusLine();
     closeProfileModal();
     if(currentChat) loadMessages(false);
