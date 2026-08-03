@@ -819,7 +819,7 @@ async function renderOwnerControls(targetName){
   box.classList.remove('hidden');
   document.getElementById('mod-status-line').textContent = 'Loading status...';
   document.getElementById('mod-duration-picker').classList.remove('show');
-  document.getElementById('other-accounts-box').innerHTML = '';
+  document.getElementById('other-accounts-box').innerHTML = '<div class="other-accounts-label">Other accounts (same device)</div><div class="other-accounts-list" style="color:var(--text-dimmer);">Checking...</div>';
 
   let statusBody = { status: null };
   try{
@@ -834,8 +834,12 @@ async function renderOwnerControls(targetName){
     const res = await fetch('/api/other-accounts/' + encodeURIComponent(targetKey) + '?requester=' + encodeURIComponent(me));
     if(res.ok){
       renderOtherAccounts(await res.json());
+    } else {
+      document.getElementById('other-accounts-box').innerHTML = '<div class="other-accounts-label">Other accounts (same device)</div><div class="other-accounts-list" style="color:var(--text-dimmer);">Could not check right now.</div>';
     }
-  }catch(e){}
+  }catch(e){
+    document.getElementById('other-accounts-box').innerHTML = '<div class="other-accounts-label">Other accounts (same device)</div><div class="other-accounts-list" style="color:var(--text-dimmer);">Could not reach server.</div>';
+  }
 }
 
 function renderRenameControl(targetKey, currentDisplayName){
@@ -1032,6 +1036,7 @@ async function saveProfile(){
   const err = document.getElementById('profile-error');
   const password = document.getElementById('profile-password').value;
   if(!password){ err.textContent = 'Enter your password to confirm changes.'; return; }
+  const wasOwner = myProfile.is_owner;
   const payload = {
     username: me,
     password: password,
@@ -1052,7 +1057,8 @@ async function saveProfile(){
       return;
     }
 
-    if(myProfile.is_owner){
+    let ownerFlagAfterRename = wasOwner;
+    if(wasOwner){
       const newUsername = document.getElementById('profile-username-edit').value.trim();
       const newPassword = document.getElementById('profile-new-password').value;
       const usernameChanged = newUsername && newUsername.toLowerCase() !== me.toLowerCase();
@@ -1072,6 +1078,7 @@ async function saveProfile(){
           err.textContent = body2.error === 'taken' ? 'That username is taken.' : 'Could not update account.';
           return;
         }
+        ownerFlagAfterRename = true; // this endpoint only ever succeeds for the owner
         if(usernameChanged){
           me = body2.username;
           document.getElementById('me-name').textContent = me;
@@ -1082,7 +1089,7 @@ async function saveProfile(){
       }
     }
 
-    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar, is_owner: !!body.is_owner };
+    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar, is_owner: wasOwner || ownerFlagAfterRename || !!body.is_owner };
     localStorage.setItem('ROX-session', JSON.stringify({ name: me, mode: 'account', gender: myProfile.gender, age: myProfile.age }));
     document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
     document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');

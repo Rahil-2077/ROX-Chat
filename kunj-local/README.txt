@@ -54,6 +54,17 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- BUGFIX: kisi bhi user (khud owner ho ya doosra) ko rename karne pe ab
+  uski **saari purani chats** (room + DM dono) naye username ke neeche
+  turant dikhti hain — pehle purana history purane naam pe hi reh jaata
+  tha. Multi-account tracking (kaun kitne naam use kar chuka hai) bhi ab
+  rename ke saath migrate ho jaati hai, aur agar us user pe mute/kick/ban
+  laga hua tha to wo bhi naye naam ke saath carry hota hai.
+- BUGFIX: owner jab khud apna naam change karta hai, to ab uska Owner
+  badge as-it-is rehta hai (pehle galti se "Member" ban jaata tha).
+- "Other accounts" section ab agar load na ho paye to khaali nahi rahega
+  — "Could not check right now" jaisa clear message dikhayega, taaki
+  pata chal sake kuch galat hua.
 - BUGFIX: agar tera "owner" account naye moderation update se PEHLE bana
   tha, to use owner ka badge/powers nahi mil rahi thi (Member/Guest jaisa
   dikh raha tha, mute/kick/ban/rename options gayab the). Fix ho gaya —

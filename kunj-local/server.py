@@ -410,6 +410,56 @@ def guest_logout():
     return jsonify({"ok": True, "cleared": len(keys_to_delete)})
 
 
+def migrate_username(data, old_key, new_key, new_display):
+    """When an account is renamed, carry all its history over to the new name."""
+    if old_key == new_key:
+        return
+
+    # room messages: just relabel the sender
+    for k, msgs in data['messages'].items():
+        if k.startswith('room-msgs:'):
+            for m in msgs:
+                if m.get('user', '').lower() == old_key:
+                    m['user'] = new_display
+
+    # DM messages: the conversation key itself is built from both usernames,
+    # so it has to be renamed (and merged if the new name already had one)
+    for old_full_key in [k for k in data['messages'].keys() if k.startswith('dm-msgs:')]:
+        pair = old_full_key[len('dm-msgs:'):]
+        parts = pair.split('__')
+        if old_key not in parts:
+            continue
+        new_parts = sorted(new_key if p == old_key else p for p in parts)
+        new_full_key = 'dm-msgs:' + '__'.join(new_parts)
+        msgs = data['messages'].pop(old_full_key)
+        for m in msgs:
+            if m.get('user', '').lower() == old_key:
+                m['user'] = new_display
+        existing = data['messages'].get(new_full_key, [])
+        data['messages'][new_full_key] = existing + msgs
+
+    # device tracking (multi-account detection)
+    if old_key in data['user_devices']:
+        devs = data['user_devices'].pop(old_key)
+        merged = data['user_devices'].setdefault(new_key, [])
+        for d in devs:
+            if d not in merged:
+                merged.append(d)
+            users_list = data['devices'].setdefault(d, [])
+            if old_key in users_list:
+                users_list.remove(old_key)
+            if new_key not in users_list:
+                users_list.append(new_key)
+
+    # any active mute/kick/ban carries over
+    if old_key in data['moderation']:
+        data['moderation'][new_key] = data['moderation'].pop(old_key)
+
+    # presence (harmless if stale, but keep it tidy)
+    if old_key in data['presence']:
+        data['presence'][new_key] = data['presence'].pop(old_key)
+
+
 @app.route('/api/owner-self-update', methods=['POST'])
 def owner_self_update():
     body = request.get_json(force=True)
@@ -431,10 +481,11 @@ def owner_self_update():
             acc['username'] = new_username
             acc['is_owner'] = True
             data['accounts'][new_key] = acc
+            migrate_username(data, current_key, new_key, new_username)
         if new_password:
             acc['password'] = new_password
         save_data(data)
-    return jsonify({"ok": True, "username": acc['username']})
+    return jsonify({"ok": True, "username": acc['username'], "is_owner": True})
 
 
 @app.route('/api/owner-rename-user', methods=['POST'])
@@ -459,6 +510,7 @@ def owner_rename_user():
             del data['accounts'][target]
             acc['username'] = new_username
             data['accounts'][new_key] = acc
+            migrate_username(data, target, new_key, new_username)
         save_data(data)
     return jsonify({"ok": True, "username": acc['username']})
 
