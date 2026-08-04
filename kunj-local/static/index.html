@@ -845,16 +845,13 @@ async function renderOwnerControls(targetName){
 function renderRenameControl(targetKey, currentDisplayName){
   const isGuest = profileCache[targetKey] && profileCache[targetKey].guest;
   const el = document.getElementById('rename-control');
-  if(isGuest){
-    el.innerHTML = '';
-    return;
-  }
   el.innerHTML = `
     <div class="other-accounts-label">Rename this user</div>
     <div style="display:flex;gap:6px;">
       <input id="rename-input" placeholder="new username" value="${escapeHtml(currentDisplayName)}" maxlength="20" style="margin-bottom:0;">
       <button class="mod-icon-btn" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="submitRename('${targetKey}')">Rename</button>
     </div>
+    ${isGuest ? '<div style="font-size:11px;color:var(--text-dimmer);margin-top:5px;">Guests have no login — this just relabels their chat history.</div>' : ''}
   `;
 }
 

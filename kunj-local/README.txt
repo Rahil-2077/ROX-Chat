@@ -54,6 +54,11 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- BUGFIX: rename option ab GUESTS ke liye bhi dikhta hai (pehle sirf
+  registered accounts ke liye tha) — "Other accounts" section ke upar
+  hi milega. Guests ka koi permanent login nahi hota, isliye unka rename
+  sirf unki chat history relabel karta hai (naya naam se future messages
+  bhi usi naam se judenge agar wapas usi naam se aaye).
 - BUGFIX: kisi bhi user (khud owner ho ya doosra) ko rename karne pe ab
   uski **saari purani chats** (room + DM dono) naye username ke neeche
   turant dikhti hain — pehle purana history purane naam pe hi reh jaata

@@ -496,23 +496,36 @@ def owner_rename_user():
     new_username = (body.get('newUsername') or '').strip()
     if not target or not new_username:
         return jsonify({"error": "missing fields"}), 400
+    new_key = new_username.lower()
+    if new_key == target:
+        return jsonify({"error": "same name"}), 400
     with lock:
         data = load_data()
         if not verify_requester_is_owner(data, requester):
             return jsonify({"error": "unauthorized"}), 401
-        if target not in data['accounts']:
-            return jsonify({"error": "target not found (guests can't be renamed)"}), 404
-        new_key = new_username.lower()
-        acc = data['accounts'][target]
-        if new_key != target:
-            if new_key in data['accounts']:
-                return jsonify({"error": "taken"}), 409
-            del data['accounts'][target]
+        name_taken = new_key in data['accounts'] or (
+            new_key in data['presence'] and new_key != target
+        )
+        if name_taken:
+            return jsonify({"error": "taken"}), 409
+
+        if target in data['accounts']:
+            # registered account — move the whole account record
+            acc = data['accounts'].pop(target)
             acc['username'] = new_username
             data['accounts'][new_key] = acc
-            migrate_username(data, target, new_key, new_username)
+            final_username = acc['username']
+        else:
+            # guest — no persistent account to move, just relabel their history
+            presence_entry = data['presence'].get(target)
+            final_username = new_username
+            if presence_entry:
+                presence_entry['username'] = new_username
+                data['presence'][new_key] = data['presence'].pop(target)
+
+        migrate_username(data, target, new_key, new_username)
         save_data(data)
-    return jsonify({"ok": True, "username": acc['username']})
+    return jsonify({"ok": True, "username": final_username})
 
 
 @app.route('/api/moderate', methods=['POST'])
