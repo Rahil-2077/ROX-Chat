@@ -36,18 +36,24 @@ def prune_old_devices(data):
     last_seen = data.get('device_last_seen', {})
     now = datetime.datetime.now().timestamp()
     expired = [d for d, ts in last_seen.items() if now - ts > DEVICE_RETENTION_SECONDS]
-    if not expired:
-        return False
-    for d in expired:
-        last_seen.pop(d, None)
-        users = data['devices'].pop(d, [])
-        for u in users:
-            devs = data['user_devices'].get(u)
-            if devs and d in devs:
-                devs.remove(d)
-                if not devs:
-                    data['user_devices'].pop(u, None)
-    return True
+    changed = False
+    if expired:
+        changed = True
+        for d in expired:
+            last_seen.pop(d, None)
+            users = data['devices'].pop(d, [])
+            for u in users:
+                devs = data['user_devices'].get(u)
+                if devs and d in devs:
+                    devs.remove(d)
+                    if not devs:
+                        data['user_devices'].pop(u, None)
+    redirects = data.get('rename_redirects', {})
+    stale_redirects = [k for k, r in redirects.items() if now - r.get('ts', 0) > 600]
+    for k in stale_redirects:
+        redirects.pop(k, None)
+        changed = True
+    return changed
 
 
 def load_data():
@@ -67,6 +73,7 @@ def load_data():
     doc.setdefault('devices', {})
     doc.setdefault('user_devices', {})
     doc.setdefault('device_last_seen', {})
+    doc.setdefault('rename_redirects', {})
     needs_save = False
     if DEFAULT_ROOM not in doc['rooms']:
         doc['rooms'].insert(0, DEFAULT_ROOM)
@@ -482,6 +489,9 @@ def owner_self_update():
             acc['is_owner'] = True
             data['accounts'][new_key] = acc
             migrate_username(data, current_key, new_key, new_username)
+            data['rename_redirects'][current_key] = {
+                "to": new_key, "display": new_username, "ts": datetime.datetime.now().timestamp()
+            }
         if new_password:
             acc['password'] = new_password
         save_data(data)
@@ -524,6 +534,9 @@ def owner_rename_user():
                 data['presence'][new_key] = data['presence'].pop(target)
 
         migrate_username(data, target, new_key, new_username)
+        data['rename_redirects'][target] = {
+            "to": new_key, "display": final_username, "ts": datetime.datetime.now().timestamp()
+        }
         save_data(data)
     return jsonify({"ok": True, "username": final_username})
 
@@ -604,6 +617,19 @@ def heartbeat():
     key = username.lower()
     with lock:
         data = load_data()
+        redirect = data['rename_redirects'].pop(key, None)
+        if redirect:
+            data['presence'].pop(key, None)
+            new_key = redirect['to']
+            data['presence'][new_key] = {
+                "ts": datetime.datetime.now().timestamp(),
+                "username": redirect['display'],
+                "gender": (body.get('gender') or '').strip(),
+                "age": body.get('age', '')
+            }
+            track_device(data, new_key, device_id, redirect['display'])
+            save_data(data)
+            return jsonify({"ok": True, "renamed_to": redirect['display']})
         data['presence'][key] = {
             "ts": datetime.datetime.now().timestamp(),
             "username": username,

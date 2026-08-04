@@ -54,6 +54,14 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- BUGFIX (bada wala): agar owner kisi ko rename karta hai jab wo user
+  USI WAQT site pe already logged in/online ho, to pehle uska session
+  "guest" ban jaata tha (naya naam server pe ban jaata tha lekin unki
+  apni open browser tab purane naam pe atki reh jaati thi). Ab fix ho
+  gaya — agle heartbeat mein (~5 second ke andar) unka session khud
+  naye naam pe switch ho jaata hai, bina unhe logout/refresh kiye. Unki
+  badge, profile, DM sab automatically naye naam ke saath sync ho jaate
+  hain.
 - BUGFIX: rename option ab GUESTS ke liye bhi dikhta hai (pehle sirf
   registered accounts ke liye tha) — "Other accounts" section ke upar
   hi milega. Guests ka koi permanent login nahi hota, isliye unka rename

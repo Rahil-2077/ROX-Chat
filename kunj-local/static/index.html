@@ -1100,12 +1100,35 @@ async function saveProfile(){
 
 async function sendHeartbeat(){
   try{
-    await fetch('/api/heartbeat', {
+    const res = await fetch('/api/heartbeat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({username: me, gender: myProfile.gender || '', age: myProfile.age || '', deviceId: DEVICE_ID})
     });
+    const body = await res.json();
+    if(body && body.renamed_to && me && body.renamed_to.toLowerCase() !== me.toLowerCase()){
+      await applyLiveRename(body.renamed_to);
+    }
   }catch(e){}
+}
+
+async function applyLiveRename(newName){
+  me = newName;
+  document.getElementById('me-name').textContent = me;
+  try{
+    const p = await fetch('/api/profile/' + encodeURIComponent(me.toLowerCase())).then(r => r.json());
+    if(!p.error){
+      myProfile = { gender: p.gender||'', age: p.age||'', bio: p.bio||'', avatar: p.avatar||'', is_owner: !!p.is_owner };
+    }
+  }catch(e){}
+  localStorage.setItem('ROX-session', JSON.stringify({ name: me, mode: myMode, gender: myProfile.gender, age: myProfile.age }));
+  document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
+  document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');
+  updateMeStatusLine();
+  await refreshDmContacts();
+  if(currentChat && currentChat.type === 'dm'){
+    openDm(currentChat.display);
+  }
 }
 
 async function refreshOnline(){
