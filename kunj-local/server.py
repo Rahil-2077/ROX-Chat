@@ -4,6 +4,7 @@ import os
 import threading
 import datetime
 import random
+import re
 
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
@@ -111,6 +112,12 @@ def save_data(data):
 
 OWNER_USERNAME = "owner"
 
+USERNAME_PATTERN = re.compile(r'^[A-Za-z0-9_]+$')
+
+
+def is_valid_username(name):
+    return bool(name) and bool(USERNAME_PATTERN.match(name))
+
 DURATION_MINUTES = {"15min": 15, "30min": 30, "2hr": 120, "24hr": 1440, "1week": 10080}
 
 
@@ -181,6 +188,8 @@ def signup():
     device_id = (body.get('deviceId') or '').strip()
     if not username or not password:
         return jsonify({"error": "missing fields"}), 400
+    if not is_valid_username(username):
+        return jsonify({"error": "invalid_username"}), 400
     key = username.lower()
     with lock:
         data = load_data()
@@ -305,6 +314,8 @@ def guest_check():
     device_id = (body.get('deviceId') or '').strip()
     if not username:
         return jsonify({"error": "missing username"}), 400
+    if not is_valid_username(username):
+        return jsonify({"error": "invalid_username"}), 400
     key = username.lower()
     with lock:
         data = load_data()
@@ -481,6 +492,8 @@ def owner_self_update():
         if not acc or acc.get('password') != current_password or not acc.get('is_owner'):
             return jsonify({"error": "unauthorized"}), 401
         if new_username and new_username.lower() != current_key:
+            if not is_valid_username(new_username):
+                return jsonify({"error": "invalid_username"}), 400
             new_key = new_username.lower()
             if new_key in data['accounts']:
                 return jsonify({"error": "taken"}), 409
@@ -506,6 +519,8 @@ def owner_rename_user():
     new_username = (body.get('newUsername') or '').strip()
     if not target or not new_username:
         return jsonify({"error": "missing fields"}), 400
+    if not is_valid_username(new_username):
+        return jsonify({"error": "invalid_username"}), 400
     new_key = new_username.lower()
     if new_key == target:
         return jsonify({"error": "same name"}), 400

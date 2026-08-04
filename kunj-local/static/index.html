@@ -601,6 +601,10 @@ function switchAccountSub(sub){
   document.getElementById('sub-pane-register').classList.toggle('hidden', sub!=='register');
 }
 
+function isValidUsername(name){
+  return /^[A-Za-z0-9_]+$/.test(name);
+}
+
 function getDeviceId(){
   let id = localStorage.getItem('ROX-device-id');
   if(!id){
@@ -629,6 +633,7 @@ async function joinAsGuest(){
   const age = document.getElementById('guest-age').value;
   err.textContent = '';
   if(!name){ err.textContent = 'Enter a name first.'; return; }
+  if(!isValidUsername(name)){ err.textContent = 'Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.'; return; }
   try{
     const res = await fetch('/api/guest-check', {
       method: 'POST',
@@ -639,6 +644,10 @@ async function joinAsGuest(){
     if(!res.ok){
       if(body.error === 'taken'){
         err.textContent = 'That name belongs to an account. Pick another, or log in above.';
+        return;
+      }
+      if(body.error === 'invalid_username'){
+        err.textContent = 'Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.';
         return;
       }
       if(body.error === 'ban'){ showBanScreen(); return; }
@@ -659,6 +668,10 @@ async function doAuth(kind){
   const password = pInput.value;
   err.textContent = '';
   if(!username || !password){ err.textContent = 'Fill both fields.'; return; }
+  if(kind === 'signup' && !isValidUsername(username)){
+    err.textContent = 'Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.';
+    return;
+  }
   const payload = { username, password, deviceId: DEVICE_ID };
   if(!isLogin){
     payload.gender = document.getElementById('reg-gender').value;
@@ -674,6 +687,10 @@ async function doAuth(kind){
     if(!res.ok){
       if(body.error === 'ban'){ showBanScreen(); return; }
       if(body.error === 'kick'){ showKickScreen(Math.max(0, body.until - Date.now()/1000)); return; }
+      if(body.error === 'invalid_username'){
+        err.textContent = 'Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.';
+        return;
+      }
       err.textContent = kind === 'signup' ? 'That username is taken.' : 'Wrong username or password.';
       return;
     }
@@ -859,6 +876,10 @@ async function submitRename(targetKey){
   const input = document.getElementById('rename-input');
   const newUsername = input.value.trim();
   if(!newUsername) return;
+  if(!isValidUsername(newUsername)){
+    alert('Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.');
+    return;
+  }
   try{
     const res = await fetch('/api/owner-rename-user', {
       method: 'POST',
@@ -867,7 +888,9 @@ async function submitRename(targetKey){
     });
     const body = await res.json();
     if(!res.ok){
-      alert(body.error === 'taken' ? 'That username is already taken.' : 'Could not rename.');
+      if(body.error === 'taken'){ alert('That username is already taken.'); return; }
+      if(body.error === 'invalid_username'){ alert('Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.'); return; }
+      alert('Could not rename.');
       return;
     }
     delete profileCache[targetKey];
@@ -1059,6 +1082,10 @@ async function saveProfile(){
       const newUsername = document.getElementById('profile-username-edit').value.trim();
       const newPassword = document.getElementById('profile-new-password').value;
       const usernameChanged = newUsername && newUsername.toLowerCase() !== me.toLowerCase();
+      if(usernameChanged && !isValidUsername(newUsername)){
+        err.textContent = 'Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.';
+        return;
+      }
       if(usernameChanged || newPassword){
         const res2 = await fetch('/api/owner-self-update', {
           method: 'POST',
@@ -1072,7 +1099,9 @@ async function saveProfile(){
         });
         const body2 = await res2.json();
         if(!res2.ok){
-          err.textContent = body2.error === 'taken' ? 'That username is taken.' : 'Could not update account.';
+          if(body2.error === 'taken'){ err.textContent = 'That username is taken.'; return; }
+          if(body2.error === 'invalid_username'){ err.textContent = 'Only letters, numbers, and underscore (_) are allowed — no spaces or symbols.'; return; }
+          err.textContent = 'Could not update account.';
           return;
         }
         ownerFlagAfterRename = true; // this endpoint only ever succeeds for the owner
