@@ -54,10 +54,9 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
-- Ab username mein sirf letters, numbers, aur underscore (_) allowed hain
-  — koi special symbol, space, emoji wagera nahi chalega. Ye rule guest
-  join, register, aur rename (khud ka ya owner dwara doosron ka) — sab
-  jagah lagu hota hai.
+- Username rule update: ab letters, numbers, SPACE, aur underscore (_)
+  allowed hain — koi aur special symbol nahi chalega. (Pehle sirf
+  underscore allowed tha, ab space bhi add kar diya.)
 - BUGFIX (bada wala): agar owner kisi ko rename karta hai jab wo user
   USI WAQT site pe already logged in/online ho, to pehle uska session
   "guest" ban jaata tha (naya naam server pe ban jaata tha lekin unki

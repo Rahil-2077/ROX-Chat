@@ -112,11 +112,11 @@ def save_data(data):
 
 OWNER_USERNAME = "owner"
 
-USERNAME_PATTERN = re.compile(r'^[A-Za-z0-9_]+$')
+USERNAME_PATTERN = re.compile(r'^[A-Za-z0-9_ ]+$')
 
 
 def is_valid_username(name):
-    return bool(name) and bool(USERNAME_PATTERN.match(name))
+    return bool(name) and bool(name.strip()) and bool(USERNAME_PATTERN.match(name))
 
 DURATION_MINUTES = {"15min": 15, "30min": 30, "2hr": 120, "24hr": 1440, "1week": 10080}
 
