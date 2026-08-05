@@ -54,6 +54,18 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- USERNAME STYLING: registered users ab apna naam style kar sakte hain
+  "Edit profile" mein — Plain, Solid color, Gradient (2 colors), ya Neon
+  glow. Live preview dikhta hai wahi. Ye styled naam har jagah dikhta hai
+  — chat messages, DM list, online list, profile card, apni sidebar.
+- CUSTOM FONT: ek "Custom font" field bhi hai — usme koi bhi Google Fonts
+  ka EXACT naam type karo (jaise "Poppins", "Bebas Neue", "Pacifico") aur
+  wo font apne aap load ho jaayega, koi file upload karne ki zaroorat
+  nahi. Font dhoondhne ke liye https://fonts.google.com pe jao, jo font
+  pasand aaye use click karo, uska naam wapas yaha type kar do — exact
+  spelling match honi chahiye.
+  (Guests ke liye ye feature nahi hai — sirf registered accounts ke liye,
+  kyunki style data unke account ke saath permanently save hota hai.)
 - Stylish icons: emoji icons ki jagah ab Bootstrap Icons use ho rahe hain
   (logout, edit profile, send, DM inbox, hamburger menu, emoji picker,
   mute/kick/ban/revoke, close buttons, message/rename buttons — sab

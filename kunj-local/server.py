@@ -112,6 +112,8 @@ def save_data(data):
 
 OWNER_USERNAME = "owner"
 
+DEFAULT_NAME_STYLE = {"type": "plain", "color1": "", "color2": "", "font": ""}
+
 USERNAME_PATTERN = re.compile(r'^[A-Za-z0-9_ ]+$')
 
 
@@ -206,13 +208,14 @@ def signup():
             "age": age,
             "bio": "",
             "avatar": "",
-            "is_owner": key == OWNER_USERNAME
+            "is_owner": key == OWNER_USERNAME,
+            "name_style": DEFAULT_NAME_STYLE.copy()
         }
         track_device(data, key, device_id, username)
         save_data(data)
     return jsonify({
         "ok": True, "username": username, "gender": gender, "age": age, "bio": "", "avatar": "",
-        "is_owner": key == OWNER_USERNAME
+        "is_owner": key == OWNER_USERNAME, "name_style": DEFAULT_NAME_STYLE.copy()
     })
 
 
@@ -243,6 +246,7 @@ def login():
         "age": acc.get('age', ''),
         "bio": acc.get('bio', ''),
         "avatar": acc.get('avatar', ''),
+        "name_style": acc.get('name_style', DEFAULT_NAME_STYLE),
         "is_owner": key == get_owner_key(data)
     })
 
@@ -260,6 +264,7 @@ def get_profile(username):
             "age": acc.get('age', ''),
             "bio": acc.get('bio', ''),
             "avatar": acc.get('avatar', ''),
+            "name_style": acc.get('name_style', DEFAULT_NAME_STYLE),
             "is_owner": key == get_owner_key(data)
         })
     presence_entry = data['presence'].get(key)
@@ -295,6 +300,14 @@ def update_profile():
             acc['bio'] = (body.get('bio') or '').strip()[:200]
         if body.get('avatar'):
             acc['avatar'] = body.get('avatar')
+        if 'nameStyle' in body and isinstance(body['nameStyle'], dict):
+            ns = body['nameStyle']
+            acc['name_style'] = {
+                "type": ns.get('type', 'plain') if ns.get('type') in ('plain', 'solid', 'gradient', 'neon') else 'plain',
+                "color1": (ns.get('color1') or '')[:20],
+                "color2": (ns.get('color2') or '')[:20],
+                "font": (ns.get('font') or '').strip()[:60]
+            }
         save_data(data)
     return jsonify({
         "ok": True,
@@ -303,6 +316,7 @@ def update_profile():
         "age": acc.get('age', ''),
         "bio": acc.get('bio', ''),
         "avatar": acc.get('avatar', ''),
+        "name_style": acc.get('name_style', DEFAULT_NAME_STYLE),
         "is_owner": key == get_owner_key(data)
     })
 

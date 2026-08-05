@@ -209,6 +209,15 @@
     background:var(--panel-2);border:1px solid var(--border);color:var(--text-dimmer);
     padding:11px 13px;border-radius:10px;font-size:14px;margin-bottom:12px;
   }
+  .name-style-preview{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    padding:16px;text-align:center;font-size:20px;font-family:'Fraunces',serif;
+    margin-bottom:10px;
+  }
+  input[type=color]{
+    width:100%;height:42px;padding:3px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:10px;cursor:pointer;margin-bottom:12px;
+  }
   .modal-actions{display:flex;gap:8px;margin-top:6px;}
   .modal-actions button.secondary{
     flex:1;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
@@ -459,6 +468,28 @@
       <input type="file" id="profile-pic-input" accept="image/*" onchange="onPickAvatar(event)">
     </div>
 
+    <label class="field-label">Name style</label>
+    <div class="name-style-preview" id="name-style-preview"></div>
+    <select id="ns-type" onchange="onNameStyleTypeChange()">
+      <option value="plain">Plain (default)</option>
+      <option value="solid">Solid color</option>
+      <option value="gradient">Gradient</option>
+      <option value="neon">Neon glow</option>
+    </select>
+    <div class="row-2" id="ns-color-row">
+      <div>
+        <label class="field-label" id="ns-color1-label">Color</label>
+        <input id="ns-color1" type="color" value="#EC5A82" oninput="updateNameStylePreview()">
+      </div>
+      <div id="ns-color2-wrap" class="hidden">
+        <label class="field-label">Second color</label>
+        <input id="ns-color2" type="color" value="#6BC48E" oninput="updateNameStylePreview()">
+      </div>
+    </div>
+    <label class="field-label">Custom font (optional)</label>
+    <input id="ns-font" placeholder="e.g. Poppins, Bebas Neue, Pacifico" oninput="updateNameStylePreview()">
+    <div class="form-note" style="text-align:left;margin-top:-4px;">Type the exact font name from <a href="https://fonts.google.com" target="_blank" style="color:var(--green);">fonts.google.com</a> — leave blank to keep the default look. Browse there, click a font, copy its name here.</div>
+
     <label class="field-label">About / bio</label>
     <textarea id="profile-bio" maxlength="200" placeholder="Say something about yourself..."></textarea>
 
@@ -493,7 +524,7 @@
 <script>
 let me = null;
 let myMode = null;
-let myProfile = { gender:'', age:'', bio:'', avatar:'', is_owner:false };
+let myProfile = { gender:'', age:'', bio:'', avatar:'', is_owner:false, nameStyle: { type:'plain', color1:'', color2:'', font:'' } };
 let currentChat = null;
 let pollTimer = null;
 let onlineTimer = null;
@@ -548,6 +579,50 @@ const ROLE_BADGE_SRC = {
   guest: '/badges/guestbadge.png'
 };
 const ROLE_LABEL = { owner: 'Owner', user: 'Member', guest: 'Guest' };
+
+const loadedFonts = new Set();
+function ensureFontLoaded(fontName){
+  if(!fontName || loadedFonts.has(fontName)) return;
+  loadedFonts.add(fontName);
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(fontName).replace(/%20/g, '+') + '&display=swap';
+  document.head.appendChild(link);
+}
+
+function styledNameHtml(text, style){
+  const safe = escapeHtml(text);
+  if(!style || style.type === 'plain'){
+    if(style && style.font){
+      ensureFontLoaded(style.font);
+      return `<span style="font-family:'${style.font}',inherit;">${safe}</span>`;
+    }
+    return safe;
+  }
+  let css = '';
+  if(style.font){
+    ensureFontLoaded(style.font);
+    css += `font-family:'${style.font}',inherit;`;
+  }
+  if(style.type === 'solid'){
+    css += `color:${style.color1 || '#EC5A82'};`;
+  } else if(style.type === 'gradient'){
+    const c1 = style.color1 || '#EC5A82';
+    const c2 = style.color2 || '#6BC48E';
+    css += `background:linear-gradient(90deg,${c1},${c2});-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;`;
+  } else if(style.type === 'neon'){
+    const c = style.color1 || '#6BC48E';
+    css += `color:${c};text-shadow:0 0 5px ${c},0 0 12px ${c},0 0 22px ${c};font-weight:700;`;
+  }
+  return `<span style="${css}">${safe}</span>`;
+}
+
+function nameStyleFor(name){
+  const lower = name.trim().toLowerCase();
+  if(me && lower === me.toLowerCase()) return myProfile.nameStyle;
+  const p = profileCache[lower];
+  return p && p.name_style ? p.name_style : null;
+}
 
 function getRoleFor(name){
   const lower = name.trim().toLowerCase();
@@ -710,10 +785,11 @@ async function enterApp(name, mode, profile){
   myMode = mode;
   myProfile = profile || { gender:'', age:'', bio:'', avatar:'', is_owner:false };
   myProfile.is_owner = !!myProfile.is_owner;
+  myProfile.nameStyle = profile && profile.name_style ? profile.name_style : { type:'plain', color1:'', color2:'', font:'' };
   localStorage.setItem('ROX-session', JSON.stringify({ name, mode, gender: myProfile.gender, age: myProfile.age }));
   document.getElementById('screen-landing').classList.add('hidden');
   document.getElementById('screen-app').classList.remove('hidden');
-  document.getElementById('me-name').textContent = me;
+  document.getElementById('me-name').innerHTML = styledNameHtml(me, myProfile.nameStyle);
   document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
   document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');
   updateMeStatusLine();
@@ -1031,11 +1107,41 @@ function openProfileModal(){
   document.getElementById('owner-password-row').classList.toggle('hidden', !isOwner);
   document.getElementById('profile-new-password').value = '';
 
+  const ns = myProfile.nameStyle || { type:'plain', color1:'', color2:'', font:'' };
+  document.getElementById('ns-type').value = ns.type || 'plain';
+  document.getElementById('ns-color1').value = ns.color1 || '#EC5A82';
+  document.getElementById('ns-color2').value = ns.color2 || '#6BC48E';
+  document.getElementById('ns-font').value = ns.font || '';
+  onNameStyleTypeChange();
+
   document.getElementById('profile-modal').classList.add('show');
 }
 
 function closeProfileModal(){
   document.getElementById('profile-modal').classList.remove('show');
+}
+
+function onNameStyleTypeChange(){
+  const type = document.getElementById('ns-type').value;
+  document.getElementById('ns-color-row').classList.toggle('hidden', type === 'plain');
+  document.getElementById('ns-color2-wrap').classList.toggle('hidden', type !== 'gradient');
+  const label1 = document.getElementById('ns-color1-label');
+  label1.textContent = type === 'gradient' ? 'First color' : (type === 'neon' ? 'Glow color' : 'Color');
+  updateNameStylePreview();
+}
+
+function currentNameStyleFromForm(){
+  return {
+    type: document.getElementById('ns-type').value,
+    color1: document.getElementById('ns-color1').value,
+    color2: document.getElementById('ns-color2').value,
+    font: document.getElementById('ns-font').value.trim()
+  };
+}
+
+function updateNameStylePreview(){
+  const style = currentNameStyleFromForm();
+  document.getElementById('name-style-preview').innerHTML = styledNameHtml(me || 'YourName', style);
 }
 
 function onPickAvatar(e){
@@ -1063,7 +1169,8 @@ async function saveProfile(){
     password: password,
     bio: document.getElementById('profile-bio').value,
     gender: document.getElementById('profile-gender').value,
-    age: document.getElementById('profile-age').value
+    age: document.getElementById('profile-age').value,
+    nameStyle: currentNameStyleFromForm()
   };
   if(pendingAvatarData) payload.avatar = pendingAvatarData;
   try{
@@ -1108,7 +1215,7 @@ async function saveProfile(){
         ownerFlagAfterRename = true; // this endpoint only ever succeeds for the owner
         if(usernameChanged){
           me = body2.username;
-          document.getElementById('me-name').textContent = me;
+          document.getElementById('me-name').innerHTML = styledNameHtml(me, myProfile.nameStyle);
         }
         const effectivePassword = newPassword || password;
         ownerPasswordCache = effectivePassword;
@@ -1116,9 +1223,10 @@ async function saveProfile(){
       }
     }
 
-    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar, is_owner: wasOwner || ownerFlagAfterRename || !!body.is_owner };
+    myProfile = { gender: body.gender, age: body.age, bio: body.bio, avatar: body.avatar, is_owner: wasOwner || ownerFlagAfterRename || !!body.is_owner, nameStyle: body.name_style || { type:'plain', color1:'', color2:'', font:'' } };
     localStorage.setItem('ROX-session', JSON.stringify({ name: me, mode: 'account', gender: myProfile.gender, age: myProfile.age }));
     document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
+    document.getElementById('me-name').innerHTML = styledNameHtml(me, myProfile.nameStyle);
     document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');
     updateMeStatusLine();
     closeProfileModal();
@@ -1144,13 +1252,14 @@ async function sendHeartbeat(){
 
 async function applyLiveRename(newName){
   me = newName;
-  document.getElementById('me-name').textContent = me;
+  document.getElementById('me-name').innerHTML = styledNameHtml(me, myProfile.nameStyle);
   try{
     const p = await fetch('/api/profile/' + encodeURIComponent(me.toLowerCase())).then(r => r.json());
     if(!p.error){
-      myProfile = { gender: p.gender||'', age: p.age||'', bio: p.bio||'', avatar: p.avatar||'', is_owner: !!p.is_owner };
+      myProfile = { gender: p.gender||'', age: p.age||'', bio: p.bio||'', avatar: p.avatar||'', is_owner: !!p.is_owner, nameStyle: p.name_style || { type:'plain', color1:'', color2:'', font:'' } };
     }
   }catch(e){}
+  document.getElementById('me-name').innerHTML = styledNameHtml(me, myProfile.nameStyle);
   localStorage.setItem('ROX-session', JSON.stringify({ name: me, mode: myMode, gender: myProfile.gender, age: myProfile.age }));
   document.getElementById('me-avatar').outerHTML = avatarHtml(me).replace('class="avatar', 'id="me-avatar" class="avatar');
   document.getElementById('me-badge').innerHTML = badgeHtml(me, 'sm');
@@ -1184,7 +1293,7 @@ async function refreshOnline(){
               <div class="avatar-dot online" style="width:7px;height:7px;"></div>
             </div>
             <div class="o-info">
-              <div class="o-name">${escapeHtml(displayName)}</div>
+              <div class="o-name">${styledNameHtml(displayName, nameStyleFor(displayName))}</div>
               <div class="o-meta">${escapeHtml(meta)}</div>
             </div>
             <span style="margin-left:auto;flex-shrink:0;">${badgeHtml(displayName, 'sm')}</span>
@@ -1230,7 +1339,7 @@ function renderDmList(){
     return `
       <div class="dm-row" onclick="openDmFromDropdown('${escapeHtml(name)}')">
         <span onclick="event.stopPropagation(); openViewProfile('${escapeHtml(name)}')" style="cursor:pointer;">${avatarHtml(name, 'sm')}</span>
-        <span class="dm-name">${escapeHtml(name)}</span>
+        <span class="dm-name">${styledNameHtml(name, nameStyleFor(name))}</span>
         ${badge}
       </div>
     `;
@@ -1359,6 +1468,7 @@ async function openViewProfile(name){
       if(p.age) bits.push(p.age + ' yrs');
       document.getElementById('vp-meta').textContent = bits.length ? bits.join(' · ') : (p.guest ? 'Guest' : 'No details shared');
       document.getElementById('vp-bio').textContent = p.bio || (p.guest ? "Guests don't have a bio." : 'No bio yet.');
+      document.getElementById('vp-name').innerHTML = styledNameHtml(name, p.name_style);
     } else {
       document.getElementById('vp-meta').textContent = 'No info available';
       document.getElementById('vp-bio').textContent = '';
@@ -1486,7 +1596,7 @@ function renderMessages(msgs){
       <div class="msg-row ${mine?'mine':''} ${grouped?'grouped':''}">
         <div class="avatar-slot" ${grouped ? '' : `onclick="openViewProfile('${escapeHtml(m.user)}')" style="cursor:pointer;"`}>${grouped ? '' : avatarHtml(m.user)}</div>
         <div class="msg-col">
-          ${grouped ? '' : `<div class="msg-meta">${badgeHtml(m.user, 'sm')}<span class="who">${mine?'you':escapeHtml(m.user)}</span><span>${m.time}</span></div>`}
+          ${grouped ? '' : `<div class="msg-meta">${badgeHtml(m.user, 'sm')}<span class="who">${mine?'you':styledNameHtml(m.user, nameStyleFor(m.user))}</span><span>${m.time}</span></div>`}
           <div class="bubble">${escapeHtml(m.text)}</div>
         </div>
       </div>
