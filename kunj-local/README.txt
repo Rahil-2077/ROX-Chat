@@ -54,6 +54,11 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- Stylish icons: emoji icons ki jagah ab Bootstrap Icons use ho rahe hain
+  (logout, edit profile, send, DM inbox, hamburger menu, emoji picker,
+  mute/kick/ban/revoke, close buttons, message/rename buttons — sab
+  jagah). Ye icons CDN se load hote hain, isliye internet connection
+  chahiye (jo already zaroori hai site ke liye).
 - Username rule update: ab letters, numbers, SPACE, aur underscore (_)
   allowed hain — koi aur special symbol nahi chalega. (Pehle sirf
   underscore allowed tha, ab space bhi add kar diya.)

@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
   :root{
     --bg:#101F1A;
@@ -43,7 +44,7 @@
   input::placeholder,textarea::placeholder{color:var(--text-dimmer);}
   .row-2{display:flex;gap:10px;}
   .row-2 > *{flex:1;}
-  button.primary{width:100%;background:var(--pink);border:none;color:#fff;padding:12px 0;border-radius:10px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s,transform .1s;}
+  button.primary{width:100%;background:var(--pink);border:none;color:#fff;padding:12px 0;border-radius:10px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s,transform .1s;display:flex;align-items:center;justify-content:center;gap:7px;}
   button.primary:hover{background:#e14874;}
   button.primary:active{transform:scale(0.98);}
   button.primary:disabled{opacity:0.5;cursor:not-allowed;}
@@ -66,8 +67,8 @@
   .me-info .name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .me-info .status{font-size:11px;color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .me-actions{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
-  .logout-btn{background:transparent;border:none;color:var(--text-dimmer);font-size:11.5px;cursor:pointer;text-decoration:underline;}
-  .edit-profile-btn{background:transparent;border:none;color:var(--gold);font-size:11.5px;cursor:pointer;text-decoration:underline;}
+  .logout-btn{background:transparent;border:none;color:var(--text-dimmer);font-size:11.5px;cursor:pointer;text-decoration:underline;display:inline-flex;align-items:center;gap:4px;}
+  .edit-profile-btn{background:transparent;border:none;color:var(--gold);font-size:11.5px;cursor:pointer;text-decoration:underline;display:inline-flex;align-items:center;gap:4px;}
 
   .online-strip{padding:12px 16px;border-bottom:1px solid var(--border);}
   .online-strip-label{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dimmer);margin-bottom:9px;}
@@ -353,8 +354,8 @@
         <div class="status" id="me-status">online</div>
       </div>
       <div class="me-actions">
-        <button class="edit-profile-btn hidden" id="edit-profile-btn" onclick="openProfileModal()">edit profile</button>
-        <button class="logout-btn" onclick="logout()">log out</button>
+        <button class="edit-profile-btn hidden" id="edit-profile-btn" onclick="openProfileModal()"><i class="bi bi-pencil-square"></i> edit profile</button>
+        <button class="logout-btn" onclick="logout()"><i class="bi bi-box-arrow-right"></i> log out</button>
       </div>
     </div>
 
@@ -371,7 +372,7 @@
 
   <div class="dm-nav" id="dm-nav">
     <button class="dm-nav-btn" onclick="toggleDmDropdown()">
-      ✉️<span class="dm-badge hidden" id="dm-badge">0</span>
+      <i class="bi bi-envelope-fill"></i><span class="dm-badge hidden" id="dm-badge">0</span>
     </button>
     <div class="dm-dropdown" id="dm-dropdown">
       <div class="dm-dropdown-head">
@@ -380,7 +381,7 @@
       </div>
       <div class="inline-add" id="inline-dm">
         <input id="new-dm-name" placeholder="friend's name" maxlength="24">
-        <button onclick="startDm()">Go</button>
+        <button onclick="startDm()"><i class="bi bi-arrow-right"></i></button>
       </div>
       <div class="dm-dropdown-list" id="dm-list"></div>
     </div>
@@ -393,7 +394,7 @@
 
 <div class="modal-overlay" id="view-profile-modal">
   <div class="modal-box">
-    <button class="close-x" onclick="closeViewProfile()">&times;</button>
+    <button class="close-x" onclick="closeViewProfile()"><i class="bi bi-x-lg"></i></button>
     <div style="text-align:center;">
       <div class="avatar lg" id="vp-avatar" style="margin:0 auto 12px;"></div>
       <div id="vp-badge" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;font-size:12px;color:var(--text-dimmer);"></div>
@@ -414,14 +415,14 @@
     </div>
 
     <div class="modal-actions" style="margin-top:20px;">
-      <button class="primary" onclick="messageFromProfile()">Message</button>
+      <button class="primary" onclick="messageFromProfile()"><i class="bi bi-chat-dots-fill"></i> Message</button>
     </div>
   </div>
 </div>
 
 <div class="mod-block-screen hidden" id="ban-screen">
   <div class="mod-block-box">
-    <div class="mod-block-icon">🚫</div>
+    <div class="mod-block-icon"><i class="bi bi-slash-circle-fill"></i></div>
     <h2>You are banned</h2>
     <p>You are banned due to violating site rules.</p>
   </div>
@@ -429,7 +430,7 @@
 
 <div class="mod-block-screen hidden" id="kick-screen">
   <div class="mod-block-box">
-    <div class="mod-block-icon">⏳</div>
+    <div class="mod-block-icon"><i class="bi bi-hourglass-split"></i></div>
     <h2>You've been removed</h2>
     <p>You can rejoin in:</p>
     <div class="mod-timer" id="kick-timer">--:--</div>
@@ -438,7 +439,7 @@
 
 <div class="modal-overlay" id="profile-modal">
   <div class="modal-box">
-    <button class="close-x" onclick="closeProfileModal()">&times;</button>
+    <button class="close-x" onclick="closeProfileModal()"><i class="bi bi-x-lg"></i></button>
     <h3>Edit profile</h3>
     <div class="modal-sub">Username can't be changed — everything else can.</div>
 
@@ -454,7 +455,7 @@
     <label class="field-label">Profile picture</label>
     <div class="avatar-edit-row">
       <div class="avatar lg" id="profile-avatar-preview"></div>
-      <label for="profile-pic-input">Choose photo</label>
+      <label for="profile-pic-input"><i class="bi bi-camera-fill"></i> Choose photo</label>
       <input type="file" id="profile-pic-input" accept="image/*" onchange="onPickAvatar(event)">
     </div>
 
@@ -866,7 +867,7 @@ function renderRenameControl(targetKey, currentDisplayName){
     <div class="other-accounts-label">Rename this user</div>
     <div style="display:flex;gap:6px;">
       <input id="rename-input" placeholder="new username" value="${escapeHtml(currentDisplayName)}" maxlength="20" style="margin-bottom:0;">
-      <button class="mod-icon-btn" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="submitRename('${targetKey}')">Rename</button>
+      <button class="mod-icon-btn" style="flex:0 0 auto;padding:0 14px;font-size:13px;" onclick="submitRename('${targetKey}')"><i class="bi bi-pencil-fill"></i> Rename</button>
     </div>
     ${isGuest ? '<div style="font-size:11px;color:var(--text-dimmer);margin-top:5px;">Guests have no login — this just relabels their chat history.</div>' : ''}
   `;
@@ -901,25 +902,25 @@ async function submitRename(targetKey){
 function renderModStatusLine(statusBody){
   const el = document.getElementById('mod-status-line');
   if(!statusBody.status){
-    el.textContent = 'No active restrictions.';
+    el.innerHTML = 'No active restrictions.';
     return;
   }
   if(statusBody.status === 'ban'){
-    el.textContent = '🚫 Currently BANNED (permanent, until revoked)';
+    el.innerHTML = '<i class="bi bi-slash-circle-fill"></i> Currently BANNED (permanent, until revoked)';
   } else {
-    const label = statusBody.status === 'mute' ? '🔇 Muted' : '👢 Kicked';
-    el.textContent = `${label} — ${formatRemaining(statusBody.remaining || 0)} remaining`;
+    const label = statusBody.status === 'mute' ? '<i class="bi bi-mic-mute-fill"></i> Muted' : '<i class="bi bi-door-open-fill"></i> Kicked';
+    el.innerHTML = `${label} — ${formatRemaining(statusBody.remaining || 0)} remaining`;
   }
 }
 
 function renderModActionButtons(targetKey, currentStatus){
   const wrap = document.getElementById('mod-actions');
   let html = '';
-  html += `<button class="mod-icon-btn ${currentStatus==='mute'?'active-state':''}" onclick="onModActionClick('mute','${targetKey}')" title="Mute">🔇</button>`;
-  html += `<button class="mod-icon-btn ${currentStatus==='kick'?'active-state':''}" onclick="onModActionClick('kick','${targetKey}')" title="Kick">👢</button>`;
-  html += `<button class="mod-icon-btn ${currentStatus==='ban'?'active-state':''}" onclick="onModActionClick('ban','${targetKey}')" title="Ban">🚫</button>`;
+  html += `<button class="mod-icon-btn ${currentStatus==='mute'?'active-state':''}" onclick="onModActionClick('mute','${targetKey}')" title="Mute"><i class="bi bi-mic-mute-fill"></i></button>`;
+  html += `<button class="mod-icon-btn ${currentStatus==='kick'?'active-state':''}" onclick="onModActionClick('kick','${targetKey}')" title="Kick"><i class="bi bi-door-open-fill"></i></button>`;
+  html += `<button class="mod-icon-btn ${currentStatus==='ban'?'active-state':''}" onclick="onModActionClick('ban','${targetKey}')" title="Ban"><i class="bi bi-slash-circle-fill"></i></button>`;
   if(currentStatus){
-    html += `<button class="mod-icon-btn" onclick="onModActionClick('revoke','${targetKey}')" title="Revoke">↩️</button>`;
+    html += `<button class="mod-icon-btn" onclick="onModActionClick('revoke','${targetKey}')" title="Revoke"><i class="bi bi-arrow-counterclockwise"></i></button>`;
   }
   wrap.innerHTML = html;
 }
@@ -1414,7 +1415,7 @@ function renderChatShell(){
     : '';
   area.innerHTML = `
     <div class="chat-head">
-      <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
       ${headerAvatar}
       <div>
         <h2>${escapeHtml(currentChat.display)}</h2>
@@ -1424,10 +1425,10 @@ function renderChatShell(){
     <div class="chat-messages" id="chat-messages"><div class="empty-state">Loading...</div></div>
     <div class="chat-input-row">
       <div class="mute-banner hidden" id="mute-banner"></div>
-      <button class="icon-btn" onclick="toggleEmoji()" title="Emoji">🙂</button>
+      <button class="icon-btn" onclick="toggleEmoji()" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
       <div class="emoji-popup" id="emoji-popup"></div>
       <input id="chat-input" placeholder="Type a message" maxlength="500">
-      <button class="send-btn" id="send-btn" onclick="sendCurrentMessage()">Send</button>
+      <button class="send-btn" id="send-btn" onclick="sendCurrentMessage()"><i class="bi bi-send-fill"></i></button>
     </div>
   `;
   document.getElementById('chat-input').addEventListener('keydown', e => {
