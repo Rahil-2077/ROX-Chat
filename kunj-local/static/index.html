@@ -218,6 +218,34 @@
     width:100%;height:42px;padding:3px;background:var(--panel-2);border:1px solid var(--border);
     border-radius:10px;cursor:pointer;margin-bottom:12px;
   }
+
+  .style-open-btn{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    padding:12px 14px;border-radius:10px;font-size:15px;cursor:pointer;margin-bottom:12px;
+    display:flex;align-items:center;justify-content:space-between;font-family:'Fraunces',serif;
+  }
+  .style-open-btn:hover{background:var(--panel-3);}
+  .style-open-btn i{color:var(--text-dimmer);font-size:14px;}
+
+  .style-panel{max-width:420px;}
+  .style-top-row{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+  .style-top-row select{margin-bottom:0;}
+  .style-tabs{display:flex;gap:6px;background:var(--panel-2);border-radius:10px;padding:4px;}
+  .style-tab{
+    flex:1;background:transparent;border:none;color:var(--text-dim);padding:9px 0;
+    border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
+  }
+  .style-tab.active{background:var(--pink);color:#fff;}
+
+  .swatch-panel{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px;}
+  .swatch-panel-label{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-dimmer);text-align:center;margin-bottom:10px;}
+  .swatch-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;}
+  .swatch{
+    aspect-ratio:1;border-radius:8px;cursor:pointer;border:2px solid transparent;
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;
+  }
+  .swatch.chosen{border-color:#fff;box-shadow:0 0 0 2px var(--pink);}
+  .swatch-plain-note{color:var(--text-dimmer);font-size:12.5px;text-align:center;padding:20px 0;}
   .modal-actions{display:flex;gap:8px;margin-top:6px;}
   .modal-actions button.secondary{
     flex:1;background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
@@ -468,27 +496,11 @@
       <input type="file" id="profile-pic-input" accept="image/*" onchange="onPickAvatar(event)">
     </div>
 
-    <label class="field-label">Name style</label>
-    <div class="name-style-preview" id="name-style-preview"></div>
-    <select id="ns-type" onchange="onNameStyleTypeChange()">
-      <option value="plain">Plain (default)</option>
-      <option value="solid">Solid color</option>
-      <option value="gradient">Gradient</option>
-      <option value="neon">Neon glow</option>
-    </select>
-    <div class="row-2" id="ns-color-row">
-      <div>
-        <label class="field-label" id="ns-color1-label">Color</label>
-        <input id="ns-color1" type="color" value="#EC5A82" oninput="updateNameStylePreview()">
-      </div>
-      <div id="ns-color2-wrap" class="hidden">
-        <label class="field-label">Second color</label>
-        <input id="ns-color2" type="color" value="#6BC48E" oninput="updateNameStylePreview()">
-      </div>
-    </div>
-    <label class="field-label">Custom font (optional)</label>
-    <input id="ns-font" placeholder="e.g. Poppins, Bebas Neue, Pacifico" oninput="updateNameStylePreview()">
-    <div class="form-note" style="text-align:left;margin-top:-4px;">Type the exact font name from <a href="https://fonts.google.com" target="_blank" style="color:var(--green);">fonts.google.com</a> — leave blank to keep the default look. Browse there, click a font, copy its name here.</div>
+    <label class="field-label">Username style</label>
+    <button type="button" class="style-open-btn" onclick="openNameStyleModal()">
+      <span id="profile-style-preview-inline">YourName</span>
+      <i class="bi bi-chevron-right"></i>
+    </button>
 
     <label class="field-label">About / bio</label>
     <textarea id="profile-bio" maxlength="200" placeholder="Say something about yourself..."></textarea>
@@ -517,6 +529,38 @@
     <div class="modal-actions">
       <button class="secondary" onclick="closeProfileModal()">Cancel</button>
       <button class="primary" onclick="saveProfile()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="name-style-modal">
+  <div class="modal-box style-panel">
+    <button class="close-x" onclick="closeNameStyleModal()"><i class="bi bi-x-lg"></i></button>
+    <h3>Username style</h3>
+
+    <div class="style-top-row">
+      <select id="ns-font-select" onchange="onStylePanelChange()">
+        <option value="">Select font</option>
+      </select>
+      <div class="style-tabs">
+        <button type="button" class="style-tab" data-type="plain" onclick="selectStyleTab('plain')">Plain</button>
+        <button type="button" class="style-tab" data-type="solid" onclick="selectStyleTab('solid')">Solid</button>
+        <button type="button" class="style-tab" data-type="gradient" onclick="selectStyleTab('gradient')">Gradient</button>
+        <button type="button" class="style-tab" data-type="neon" onclick="selectStyleTab('neon')">Neon</button>
+      </div>
+    </div>
+
+    <div class="swatch-panel">
+      <div class="swatch-panel-label" id="swatch-panel-label"></div>
+      <div class="swatch-grid" id="swatch-grid"></div>
+    </div>
+
+    <div class="field-label" style="margin-top:16px;">Preview</div>
+    <div class="name-style-preview" id="name-style-preview"></div>
+
+    <div class="modal-actions">
+      <button class="secondary" onclick="closeNameStyleModal()">Cancel</button>
+      <button class="primary" onclick="applyNameStyle()">Apply</button>
     </div>
   </div>
 </div>
@@ -580,28 +624,37 @@ const ROLE_BADGE_SRC = {
 };
 const ROLE_LABEL = { owner: 'Owner', user: 'Member', guest: 'Guest' };
 
-const loadedFonts = new Set();
-function ensureFontLoaded(fontName){
-  if(!fontName || loadedFonts.has(fontName)) return;
-  loadedFonts.add(fontName);
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(fontName).replace(/%20/g, '+') + '&display=swap';
-  document.head.appendChild(link);
+let availableFonts = [];
+
+async function loadFontList(){
+  try{
+    availableFonts = await fetch('/api/fonts').then(r => r.json());
+    registerFontFaces(availableFonts);
+  }catch(e){}
+}
+
+function registerFontFaces(fonts){
+  if(document.getElementById('custom-fonts-style')) return;
+  const formatMap = { woff2:'woff2', woff:'woff', ttf:'truetype', otf:'opentype' };
+  const style = document.createElement('style');
+  style.id = 'custom-fonts-style';
+  style.textContent = fonts.map(f => {
+    const ext = f.file.split('.').pop().toLowerCase();
+    return `@font-face { font-family: '${f.name}'; src: url('/fonts/${encodeURIComponent(f.file)}') format('${formatMap[ext] || 'truetype'}'); font-display: swap; }`;
+  }).join('\n');
+  document.head.appendChild(style);
 }
 
 function styledNameHtml(text, style){
   const safe = escapeHtml(text);
   if(!style || style.type === 'plain'){
     if(style && style.font){
-      ensureFontLoaded(style.font);
       return `<span style="font-family:'${style.font}',inherit;">${safe}</span>`;
     }
     return safe;
   }
   let css = '';
   if(style.font){
-    ensureFontLoaded(style.font);
     css += `font-family:'${style.font}',inherit;`;
   }
   if(style.type === 'solid'){
@@ -1107,12 +1160,8 @@ function openProfileModal(){
   document.getElementById('owner-password-row').classList.toggle('hidden', !isOwner);
   document.getElementById('profile-new-password').value = '';
 
-  const ns = myProfile.nameStyle || { type:'plain', color1:'', color2:'', font:'' };
-  document.getElementById('ns-type').value = ns.type || 'plain';
-  document.getElementById('ns-color1').value = ns.color1 || '#EC5A82';
-  document.getElementById('ns-color2').value = ns.color2 || '#6BC48E';
-  document.getElementById('ns-font').value = ns.font || '';
-  onNameStyleTypeChange();
+  if(!myProfile.nameStyle) myProfile.nameStyle = { type:'plain', color1:'', color2:'', font:'' };
+  document.getElementById('profile-style-preview-inline').innerHTML = styledNameHtml(me, myProfile.nameStyle);
 
   document.getElementById('profile-modal').classList.add('show');
 }
@@ -1121,27 +1170,96 @@ function closeProfileModal(){
   document.getElementById('profile-modal').classList.remove('show');
 }
 
-function onNameStyleTypeChange(){
-  const type = document.getElementById('ns-type').value;
-  document.getElementById('ns-color-row').classList.toggle('hidden', type === 'plain');
-  document.getElementById('ns-color2-wrap').classList.toggle('hidden', type !== 'gradient');
-  const label1 = document.getElementById('ns-color1-label');
-  label1.textContent = type === 'gradient' ? 'First color' : (type === 'neon' ? 'Glow color' : 'Color');
-  updateNameStylePreview();
+/* ---------- Username style panel ---------- */
+const PRESET_SOLID = ['#EC5A82','#E8B84B','#6BC48E','#5AA9E6','#B98AE0','#E8735A','#4FBFB0','#D6667F',
+  '#FF6B6B','#4ECDC4','#FFD93D','#6C5CE7','#00D2D3','#FF9FF3','#54A0FF','#1DD1A1'];
+const PRESET_NEON = ['#39FF14','#FF073A','#00FFFF','#FF61F6','#FFD700','#FF6EC7','#0FF0FC','#FE01B1',
+  '#CCFF00','#FF3131','#04D9FF','#F5FF00','#FF00E6','#00FFAB','#FF9900','#00B3FF'];
+const PRESET_GRADIENTS = [
+  ['#FF6B6B','#FFD93D'],['#F7971E','#FFD200'],['#56CCF2','#2F80ED'],['#8E2DE2','#4A00E0'],
+  ['#00F260','#0575E6'],['#FC466B','#3F5EFB'],['#43CEA2','#185A9D'],['#FF9A9E','#FAD0C4'],
+  ['#A8FF78','#78FFD6'],['#FF5F6D','#FFC371'],['#36D1DC','#5B86E5'],['#EE9CA7','#FFDDE1'],
+  ['#DA22FF','#9733EE'],['#F953C6','#B91D73'],['#00C9FF','#92FE9D'],['#F7797D','#FBD786']
+];
+
+let pendingNameStyle = { type:'plain', color1:'', color2:'', font:'' };
+
+function openNameStyleModal(){
+  pendingNameStyle = Object.assign({ type:'plain', color1:'', color2:'', font:'' }, myProfile.nameStyle || {});
+  populateFontSelect();
+  document.getElementById('ns-font-select').value = pendingNameStyle.font || '';
+  selectStyleTab(pendingNameStyle.type || 'plain');
+  document.getElementById('name-style-modal').classList.add('show');
 }
 
-function currentNameStyleFromForm(){
-  return {
-    type: document.getElementById('ns-type').value,
-    color1: document.getElementById('ns-color1').value,
-    color2: document.getElementById('ns-color2').value,
-    font: document.getElementById('ns-font').value.trim()
-  };
+function closeNameStyleModal(){
+  document.getElementById('name-style-modal').classList.remove('show');
 }
 
-function updateNameStylePreview(){
-  const style = currentNameStyleFromForm();
-  document.getElementById('name-style-preview').innerHTML = styledNameHtml(me || 'YourName', style);
+function populateFontSelect(){
+  const sel = document.getElementById('ns-font-select');
+  sel.innerHTML = '<option value="">Select font</option>' +
+    availableFonts.map(f => `<option value="${escapeHtml(f.name)}">${escapeHtml(f.name)}</option>`).join('');
+}
+
+function selectStyleTab(type){
+  pendingNameStyle.type = type;
+  document.querySelectorAll('.style-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  renderSwatchGrid();
+  updateStylePreview();
+}
+
+function renderSwatchGrid(){
+  const grid = document.getElementById('swatch-grid');
+  const label = document.getElementById('swatch-panel-label');
+  const type = pendingNameStyle.type;
+  if(type === 'plain'){
+    label.textContent = 'No color — just the font (if chosen)';
+    grid.innerHTML = '<div class="swatch-plain-note">Nothing to pick here. Choose a font above if you like, or hit Apply for the default look.</div>';
+    return;
+  }
+  if(type === 'solid'){
+    label.textContent = 'Pick a color';
+    grid.innerHTML = PRESET_SOLID.map(c => swatchHtml(c, pendingNameStyle.color1 === c, `pickSolid('${c}')`)).join('');
+    return;
+  }
+  if(type === 'neon'){
+    label.textContent = 'Pick a glow color';
+    grid.innerHTML = PRESET_NEON.map(c => swatchHtml(c, pendingNameStyle.color1 === c, `pickNeon('${c}')`)).join('');
+    return;
+  }
+  if(type === 'gradient'){
+    label.textContent = 'Pick a gradient';
+    grid.innerHTML = PRESET_GRADIENTS.map(([c1,c2]) => {
+      const chosen = pendingNameStyle.color1 === c1 && pendingNameStyle.color2 === c2;
+      return swatchHtml(`linear-gradient(135deg,${c1},${c2})`, chosen, `pickGradient('${c1}','${c2}')`);
+    }).join('');
+  }
+}
+
+function swatchHtml(bg, chosen, onclickCall){
+  return `<div class="swatch ${chosen ? 'chosen' : ''}" style="background:${bg};" onclick="${onclickCall}"></div>`;
+}
+
+function pickSolid(c){ pendingNameStyle.color1 = c; renderSwatchGrid(); updateStylePreview(); }
+function pickNeon(c){ pendingNameStyle.color1 = c; renderSwatchGrid(); updateStylePreview(); }
+function pickGradient(c1, c2){ pendingNameStyle.color1 = c1; pendingNameStyle.color2 = c2; renderSwatchGrid(); updateStylePreview(); }
+
+function onStylePanelChange(){
+  pendingNameStyle.font = document.getElementById('ns-font-select').value;
+  updateStylePreview();
+}
+
+function updateStylePreview(){
+  document.getElementById('name-style-preview').innerHTML = styledNameHtml(me || 'YourName', pendingNameStyle);
+}
+
+function applyNameStyle(){
+  myProfile.nameStyle = Object.assign({}, pendingNameStyle);
+  document.getElementById('profile-style-preview-inline').innerHTML = styledNameHtml(me, myProfile.nameStyle);
+  closeNameStyleModal();
 }
 
 function onPickAvatar(e){
@@ -1170,7 +1288,7 @@ async function saveProfile(){
     bio: document.getElementById('profile-bio').value,
     gender: document.getElementById('profile-gender').value,
     age: document.getElementById('profile-age').value,
-    nameStyle: currentNameStyleFromForm()
+    nameStyle: myProfile.nameStyle || { type:'plain', color1:'', color2:'', font:'' }
   };
   if(pendingAvatarData) payload.avatar = pendingAvatarData;
   try{
@@ -1649,6 +1767,7 @@ function startPolling(){
   pollTimer = setInterval(() => loadMessages(false), 2500);
 }
 
+loadFontList();
 tryResumeSession();
 </script>
 

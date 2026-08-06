@@ -54,6 +54,25 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- USERNAME STYLE — naya dedicated panel: "Edit profile" mein ab ek chhota
+  "Username style" button hai, usko dabao to ek alag panel khulta hai
+  (jaisa tune reference image mein dikhaya tha):
+    - Upar font dropdown (khud ki uploaded fonts se, neeche dekho)
+    - 4 tabs: Plain, Solid, Gradient, Neon
+    - Har tab pe click karne se ek swatch grid khulta hai (ready-made
+      colors/gradients) — bas click karo, koi color-picker se manually
+      chunne ki zaroorat nahi
+    - Live preview neeche dikhta hai
+    - "Apply" dabao to wo panel mein select ho jaata hai; asli save
+      "Edit profile" ke "Save changes" button se hi hota hai (password
+      confirm ke saath)
+
+- CUSTOM FONTS (khud upload karne wale): ab Google Fonts se copy-paste
+  nahi karna. Apni font files (.woff2/.woff/.ttf/.otf) seedha
+  `static/fonts/` folder mein daal do (kunj-local/static/fonts/), jaisa
+  us folder ke README mein likha hai. File ka naam hi dropdown mein
+  dikhega. Server khud folder scan karke fonts load kar deta hai, koi
+  code change nahi karna.
 - USERNAME STYLING: registered users ab apna naam style kar sakte hain
   "Edit profile" mein — Plain, Solid color, Gradient (2 colors), ya Neon
   glow. Live preview dikhta hai wahi. Ye styled naam har jagah dikhta hai

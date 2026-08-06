@@ -168,9 +168,36 @@ def track_device(data, key, device_id, username_display):
         users_list.append(key)
 
 
+@app.route('/api/fonts', methods=['GET'])
+def list_fonts():
+    fonts_dir = os.path.join(app.static_folder, 'fonts')
+    if not os.path.isdir(fonts_dir):
+        return jsonify([])
+    exts = ('.woff2', '.woff', '.ttf', '.otf')
+    fonts = []
+    for fname in sorted(os.listdir(fonts_dir)):
+        if fname.lower().endswith(exts):
+            name = os.path.splitext(fname)[0]
+            fonts.append({"name": name, "file": fname})
+    return jsonify(fonts)
+
+
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
+
+
+@app.route('/api/fonts', methods=['GET'])
+def list_fonts():
+    fonts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'fonts')
+    allowed_ext = ('.ttf', '.otf', '.woff', '.woff2')
+    result = []
+    if os.path.isdir(fonts_dir):
+        for filename in sorted(os.listdir(fonts_dir)):
+            if filename.lower().endswith(allowed_ext):
+                display = os.path.splitext(filename)[0].replace('_', ' ').replace('-', ' ').strip()
+                result.append({"name": display, "file": filename})
+    return jsonify(result)
 
 
 @app.route('/api/accounts', methods=['GET'])
@@ -306,7 +333,7 @@ def update_profile():
                 "type": ns.get('type', 'plain') if ns.get('type') in ('plain', 'solid', 'gradient', 'neon') else 'plain',
                 "color1": (ns.get('color1') or '')[:20],
                 "color2": (ns.get('color2') or '')[:20],
-                "font": (ns.get('font') or '').strip()[:60]
+                "font": (ns.get('font') or '').strip()[:120]
             }
         save_data(data)
     return jsonify({
@@ -342,6 +369,22 @@ def guest_check():
         track_device(data, key, device_id, username)
         save_data(data)
     return jsonify({"ok": True})
+
+
+FONT_EXTENSIONS = ('.woff2', '.woff', '.ttf', '.otf')
+
+
+@app.route('/api/fonts', methods=['GET'])
+def list_fonts():
+    fonts_dir = os.path.join(app.static_folder, 'fonts')
+    result = []
+    if os.path.isdir(fonts_dir):
+        for fname in sorted(os.listdir(fonts_dir)):
+            if fname.lower().endswith(FONT_EXTENSIONS):
+                base = os.path.splitext(fname)[0]
+                display = base.replace('_', ' ').replace('-', ' ').strip()
+                result.append({"name": display, "file": fname})
+    return jsonify(result)
 
 
 @app.route('/api/rooms', methods=['GET'])
