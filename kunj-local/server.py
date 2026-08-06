@@ -187,17 +187,7 @@ def index():
     return send_from_directory('static', 'index.html')
 
 
-@app.route('/api/fonts', methods=['GET'])
-def list_fonts():
-    fonts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'fonts')
-    allowed_ext = ('.ttf', '.otf', '.woff', '.woff2')
-    result = []
-    if os.path.isdir(fonts_dir):
-        for filename in sorted(os.listdir(fonts_dir)):
-            if filename.lower().endswith(allowed_ext):
-                display = os.path.splitext(filename)[0].replace('_', ' ').replace('-', ' ').strip()
-                result.append({"name": display, "file": filename})
-    return jsonify(result)
+
 
 
 @app.route('/api/accounts', methods=['GET'])
