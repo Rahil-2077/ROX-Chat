@@ -54,6 +54,17 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- BUGFIX: Neon name style ab sahi dikhta hai — font ka base color hamesha
+  WHITE rahega with black outline, aur sirf GLOW us chuni hui color mein
+  hoga (pehle poora text hi us color ka ban jaata tha).
+- BUGFIX: online list aur DM list mein naam ke upar jo ajeeb rectangular
+  box dikh raha tha (khaaskar neon effect ke saath) — wo ek galat CSS
+  padding/margin ki wajah se tha, hata diya. Ab glow/effect saaf, bina
+  kisi box ke dikhega.
+- BUGFIX: neon effect wale naam pe jo rectangular box dikh raha tha
+  (online list, DM list, apni sidebar mein) — wo glow ke overflow:hidden
+  se hard-clip hone ki wajah se tha. Ab thodi si padding buffer di hai
+  taaki glow naturally fade ho, koi seedha box-edge na dikhe.
 - ASLI BUGFIX (font apply na hona): pehla fix (MIME type) sahi tha lekin
   kaafi nahi tha. Asli wajah ek invalid CSS thi — code
   `font-family:'FontName',inherit;` likh raha tha, aur `inherit` CSS mein
