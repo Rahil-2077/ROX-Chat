@@ -54,6 +54,12 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- BUGFIX: custom fonts (jo tune static/fonts/ mein daale) preview aur
+  apply karne pe change nahi ho rahe the — colors/gradient sahi apply ho
+  rahe the lekin font waisa hi reh jaata tha. Wajah: server font files
+  ko galat Content-Type ke saath bhej raha tha (Render/Linux ka common
+  issue), isliye browser chup-chaap font reject kar deta tha. Fix ho
+  gaya — ab font sahi se load aur apply hoga.
 - USERNAME STYLE — naya dedicated panel: "Edit profile" mein ab ek chhota
   "Username style" button hai, usko dabao to ek alag panel khulta hai
   (jaisa tune reference image mein dikhaya tha):

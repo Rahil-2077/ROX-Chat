@@ -5,6 +5,7 @@ import threading
 import datetime
 import random
 import re
+import mimetypes
 
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
@@ -13,6 +14,14 @@ def now_ist():
 
 
 app = Flask(__name__, static_folder='static', static_url_path='')
+
+# Some hosts (Render included) don't have font MIME types registered by
+# default, which makes browsers silently reject @font-face declarations
+# even though the file loads fine. Force the correct types explicitly.
+mimetypes.add_type('font/woff2', '.woff2')
+mimetypes.add_type('font/woff', '.woff')
+mimetypes.add_type('font/ttf', '.ttf')
+mimetypes.add_type('font/otf', '.otf')
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.json')
 lock = threading.Lock()
 
