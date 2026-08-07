@@ -649,13 +649,13 @@ function styledNameHtml(text, style){
   const safe = escapeHtml(text);
   if(!style || style.type === 'plain'){
     if(style && style.font){
-      return `<span style="font-family:'${style.font}',inherit;">${safe}</span>`;
+      return `<span style="font-family:'${style.font}', sans-serif;">${safe}</span>`;
     }
     return safe;
   }
   let css = '';
   if(style.font){
-    css += `font-family:'${style.font}',inherit;`;
+    css += `font-family:'${style.font}', sans-serif;`;
   }
   if(style.type === 'solid'){
     css += `color:${style.color1 || '#EC5A82'};`;

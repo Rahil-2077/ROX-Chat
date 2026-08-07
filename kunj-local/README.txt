@@ -54,6 +54,13 @@ jis pe tera PC hai. Mobile data pe nahi chalega.
 
 WHAT'S NEW
 ----------
+- ASLI BUGFIX (font apply na hona): pehla fix (MIME type) sahi tha lekin
+  kaafi nahi tha. Asli wajah ek invalid CSS thi — code
+  `font-family:'FontName',inherit;` likh raha tha, aur `inherit` CSS mein
+  kabhi kisi list ke andar use nahi ho sakta (sirf akela use hota hai).
+  Isse poora font-family declaration hi browser ignore kar deta tha,
+  isliye color/gradient to apply hoti thi lekin font kabhi nahi badalta
+  tha, file kितनी bhi sahi ho. Ab fix ho gaya — font turant apply hoga.
 - BUGFIX: custom fonts (jo tune static/fonts/ mein daale) preview aur
   apply karne pe change nahi ho rahe the — colors/gradient sahi apply ho
   rahe the lekin font waisa hi reh jaata tha. Wajah: server font files
