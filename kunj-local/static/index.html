@@ -665,7 +665,7 @@ function styledNameHtml(text, style){
     css += `background:linear-gradient(90deg,${c1},${c2});-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700;`;
   } else if(style.type === 'neon'){
     const c = style.color1 || '#6BC48E';
-    css += `color:#fff;-webkit-text-stroke:1px #000;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 4px ${c},0 0 9px ${c},0 0 16px ${c};font-weight:700;`;
+    css += `color:#fff;text-shadow:1px 1px 2px ${c},2px 2px 4px ${c},3px 3px 6px ${c};font-weight:700;`;
   }
   return `<span style="${css}">${safe}</span>`;
 }
